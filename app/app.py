@@ -25,9 +25,11 @@ _cols =  ['Pck / Deal','GP#', 'Days', 'Category', 'Borrower Name', 'City', 'Stat
 
 if files is not None:
     try:
-        loan_tape = LoanTape(clean_columns=_cols, )
+        raw_data = list()
         for f in files:
-            raw_df = pd.read_csv(files[-1])
+            raw_data.append(pd.read_csv(f))
+        loan_tape = LoanTape(clean_columns=_cols, data=raw_data)
+        
     except:
         st.write('Drop .csv files above to convert loan tapes')
     
