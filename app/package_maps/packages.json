@@ -1,0 +1,34 @@
+{
+    "FHN":
+        {
+            "Trans":"",
+            "GP#":"GP#",
+            "Status":"",
+            "Inv Status":"",
+            "Pkg ID":"",
+            "GTD Balance":"Current Balance",
+            "Orig Fee":"Strip Rate",
+            "Note Dt":"Note Date",
+            "Loan Age":"",
+            "Matures":"Note Maturity",
+            "Orig Mos":"",
+            "Mat Mos":"",
+            "Paid To":"",
+            "Sell Ratio":"Multiple",
+            "Sell Value":"",
+            "Borrower":"Borrower Name",
+            "Street Addr":"",
+            "City/State":"func_geosplit",
+            "NAICS":"SIC / NAICS",
+            "Gross Cpn": "Loan Spread",
+            "Adjust":"ADJ",
+            "Pays":"",
+            "Net Cap":"",
+            "Net Flr":"",
+            "Basis":"Accrual",
+            "Orig Lender":"Lender",
+            "Cert":""
+
+        }
+
+}

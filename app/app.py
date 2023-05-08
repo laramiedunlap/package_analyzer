@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 from openpyxl import load_workbook
-
+from loantape import LoanTape
 
 def load_excel_file(file):
     wb = load_workbook(file)
@@ -12,10 +12,27 @@ def load_excel_file(file):
     return df
 
 
-st.title("Excel File Uploader")
+st.title("Package File Uploader")
 
-file = st.file_uploader("Upload a file", type=["xlsx"])
+files = st.file_uploader("Upload a csv file (columns and data)", type=["csv"], accept_multiple_files=True)
 
-if file is not None:
-    df = load_excel_file(file)
-    st.write(df)
+# These are the columns for the finished loan tape
+_cols =  ['Pck / Deal','GP#', 'Days', 'Category', 'Borrower Name', 'City', 'State', 'SIC /NAICS', 'ADJ', 'Accrual', 'Note Date',
+'Note Maturity', 'Int. Paid to Date', 'Loan Spread', 'Loan Rate',
+'Strip Rate', 'Original Balance', 'Current Balance', 'Multiple', 
+'Proceeds', 'Term', 'Age', 'Rmos', 'Industry', 'Prepayment Penalty',
+'Term Bucket', 'Industry Bucket', 'Lender', 'Prepayment Notice']
+
+if files is not None:
+    try:
+        loan_tape = LoanTape(clean_columns=_cols, )
+        for f in files:
+            raw_df = pd.read_csv(files[-1])
+    except:
+        st.write('Drop .csv files above to convert loan tapes')
+    
+
+
+
+    # st.write(loan_tape.df)
+    
