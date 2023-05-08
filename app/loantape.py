@@ -4,7 +4,7 @@ import openpyxl as pyxl
 from dataclasses import dataclass
 import json
 from pathlib import Path
-
+from difflib import SequenceMatcher
 
 class LoanTape:
 
@@ -16,7 +16,7 @@ class LoanTape:
     def rm_unnamed(self, _cols:list)->list:
         return [c for c in _cols if "unnamed" not in str(c).lower()]
 
-    def norm_raw_cols(self)->None:
+    def norm_raw_cols(self):
         """Normalize the columns -- remove white space and line breaks"""
         if len(self.raw_dfs)>0:
             norm_dfs = []
@@ -27,7 +27,7 @@ class LoanTape:
                 norm_dfs.append(df)
             self.raw_dfs = norm_dfs
         else:
-            print("No raw loan data")        
+            print("No raw loan data")      
         return None
 
     def load_format_packges(self):
@@ -46,8 +46,7 @@ class LoanTape:
         self.raw_dfs = [df[self.rm_unnamed(df.columns.to_list())] for df in self.raw_dfs]
         self.format_packages = self.load_format_packges()
 
-
-    def rename_columns(self):
+    def format_columns(self):
         """Use the format packages to reformat the raw data"""
         # get all available formats
         format_keys = self.format_packages.keys()
@@ -65,6 +64,19 @@ class LoanTape:
                 else:
                     # If match, format the dataframe
                     self.raw_dfs[idx] = df.rename(columns=self.format_packages[key])
-                    self.raw_dfs[idx]['Industry'] = self.raw_dfs[idx]['SIC / NAICS'].apply(lambda x: self.naics[x])
+                    self.raw_dfs[idx]['Industry'] = self.raw_dfs[idx]['SIC / NAICS'].map(self.naics)
                     break
+
+    def combine_raw_dfs(self):
+        temp = []
+        for df in self.raw_dfs:
+            existing_cols= [c for c in df.columns if c != ""]
+            temp.append(df[existing_cols])
+        temp = pd.concat(temp, ignore_index=True)
+        temp = temp[temp['GP#'].notna()]
+        self.df = temp 
+
+
+        
+        
     
