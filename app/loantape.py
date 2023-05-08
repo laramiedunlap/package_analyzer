@@ -74,7 +74,7 @@ class LoanTape:
             temp.append(df[existing_cols])
         temp = pd.concat(temp, ignore_index=True)
         temp = temp[temp['GP#'].notna()]
-        self.df = temp 
+        self.df = temp
 
 
         

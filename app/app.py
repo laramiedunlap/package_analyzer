@@ -29,7 +29,9 @@ if files is not None:
         for f in files:
             raw_data.append(pd.read_csv(f))
         loan_tape = LoanTape(clean_columns=_cols, data=raw_data)
-        
+        loan_tape.format_columns()
+        loan_tape.combine_raw_dfs()
+        st.write(loan_tape.df)
     except:
         st.write('Drop .csv files above to convert loan tapes')
     

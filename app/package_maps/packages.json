@@ -20,7 +20,8 @@
             "Street Addr":"",
             "City/State":"func_geosplit",
             "NAICS":"SIC / NAICS",
-            "NetCpn": "Loan Spread",
+            "Gross Cpn": "Loan Spread",
+            "NetCpn":"",
             "Adjust":"ADJ",
             "Pays":"",
             "Net Cap":"",
@@ -28,7 +29,5 @@
             "Basis":"Accrual",
             "Orig Lender":"Lender",
             "Cert":""
-
         }
-
 }
