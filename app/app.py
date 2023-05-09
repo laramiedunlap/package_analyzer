@@ -23,17 +23,20 @@ _cols =  ['Pck / Deal','GP#', 'Days', 'Category', 'Borrower Name', 'City', 'Stat
 'Proceeds', 'Term', 'Age', 'Rmos', 'Industry', 'Prepayment Penalty',
 'Term Bucket', 'Industry Bucket', 'Lender', 'Prepayment Notice']
 
-if files is not None:
-    try:
-        raw_data = list()
-        for f in files:
-            raw_data.append(pd.read_csv(f))
-        loan_tape = LoanTape(clean_columns=_cols, data=raw_data)
-        loan_tape.format_columns()
-        loan_tape.combine_raw_dfs()
-        st.write(loan_tape.df)
-    except:
-        st.write('Drop .csv files above to convert loan tapes')
+
+
+if st.button('Parse All Files'):
+
+    raw_data = list()
+    for f in files:
+        raw_data.append(pd.read_csv(f))
+        
+    loan_tape = LoanTape(clean_columns=_cols, data=raw_data)
+    
+    loan_tape.format_columns()
+    loan_tape.combine_raw_dfs()
+    st.write(loan_tape.df)
+
     
 
 

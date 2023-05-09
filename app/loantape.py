@@ -4,7 +4,7 @@ from dataclasses import dataclass
 import json
 from pathlib import Path
 from difflib import SequenceMatcher
-
+import os
 
 class LoanTape:
     df: pd.DataFrame
@@ -17,7 +17,7 @@ class LoanTape:
 
     def norm_raw_cols(self):
         """Normalize the columns -- remove white space and line breaks"""
-        if len(self.raw_dfs)>0:
+        if len(self.raw_dfs):
             norm_dfs = []
             for df in self.raw_dfs:
                 cols = df.columns.to_list()
