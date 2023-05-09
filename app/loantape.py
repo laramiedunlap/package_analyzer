@@ -6,8 +6,8 @@ import json
 from pathlib import Path
 from difflib import SequenceMatcher
 
-class LoanTape:
 
+class LoanTape:
     df: pd.DataFrame
     raw_dfs: list
     naics: dict
