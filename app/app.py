@@ -23,9 +23,7 @@ _cols =  ['Pck / Deal','GP#', 'Days', 'Category', 'Borrower Name', 'City', 'Stat
 'Proceeds', 'Term', 'Age', 'Rmos', 'Industry', 'Prepayment Penalty',
 'Term Bucket', 'Industry Bucket', 'Lender', 'Prepayment Notice']
 
-
-
-if st.button('Parse All Files'):
+if st.button('Create Loantape'):
 
     raw_data = list()
     for f in files:
@@ -34,8 +32,8 @@ if st.button('Parse All Files'):
     loan_tape = LoanTape(clean_columns=_cols, data=raw_data)
     
     loan_tape.format_columns()
-    loan_tape.combine_raw_dfs()
-    st.write(loan_tape.df)
+    test_df = loan_tape.combine_raw_dfs()
+    st.write(test_df)
 
     
 
