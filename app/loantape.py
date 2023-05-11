@@ -4,9 +4,11 @@ import json
 from pathlib import Path
 import os
 
+import column_map
 
 def rm_unnamed(_cols:list)->list:
     return [c for c in _cols if "unnamed" not in str(c).lower()]
+
 
 class LoanTape:
     df: pd.DataFrame
@@ -62,7 +64,7 @@ class LoanTape:
             for key in format_keys:
                 # get the unformatted column names from the format option
                 format_type_keys = set(self.format_packages[key].keys())
-                # see if the format matches ~90%
+                # see if the format matches ~90% --> if not exact, it will still work and you can debug
                 match_ratio = 1-len(temp_cols - format_type_keys) / len(format_type_keys)
                 if match_ratio < .9:
                     continue
@@ -75,7 +77,12 @@ class LoanTape:
                     break
         self.raw_dfs.update(temp)
         return None
-        
+    
+    def test_fhn(self):
+        fhn_resolver = column_map.FHN_resolver(self.raw_dfs['FHN'], self.correct_columns)
+        return fhn_resolver.run_methods()
+        # return self.raw_dfs.keys()
+
     def combine_raw_dfs(self):
         temp = []
         # Combine the dfs with formatted columns -- excluding the originals (non-destructive)
