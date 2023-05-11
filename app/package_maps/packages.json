@@ -29,5 +29,23 @@
             "Basis":"Accrual",
             "Orig Lender":"Lender",
             "Cert":""
+        },
+        "RJ":
+        {
+            "Govt Loan #":"GP#",
+            "Notional Gtd Balance":"Current Balance",
+            "Invested":"",
+            "Gross Margin":"Loan Spread",
+            "Strip Rate":"Strip Rate",
+            "Multiple":"Multiple",
+            "Price":"",
+            "Note Date":"Note Date",
+            "Note Maturity Date":"Note Maturity",
+            "Business Name":"Borrower Name",
+            "City":"City",
+            "State":"State",
+            "Zip":"",
+            "NAICS":"SIC / NAICS",
+            "Originator":"Lender"
         }
 }

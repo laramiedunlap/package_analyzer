@@ -32,7 +32,7 @@ if st.button('Create Loantape'):
     loan_tape = LoanTape(clean_columns=_cols, data=raw_data)
     
     loan_tape.format_columns()
-    test_df = loan_tape.test_fhn()
+    test_df = loan_tape.test_rj()
     st.write(test_df)
 
 
