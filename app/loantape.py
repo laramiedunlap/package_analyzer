@@ -80,7 +80,7 @@ class LoanTape:
     
     def test_fhn(self):
         fhn_resolver = column_map.FHN_resolver(self.raw_dfs['FHN'], self.correct_columns)
-        return fhn_resolver.run_methods()
+        return fhn_resolver.resolve_columns()
         # return self.raw_dfs.keys()
 
     def combine_raw_dfs(self):

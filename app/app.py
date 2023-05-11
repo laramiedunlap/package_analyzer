@@ -17,7 +17,7 @@ st.title("Package File Uploader")
 files = st.file_uploader("Upload a csv file (columns and data)", type=["csv"], accept_multiple_files=True)
 
 # These are the columns for the finished loan tape
-_cols =  ['Pck / Deal','GP#', 'Days', 'Category', 'Borrower Name', 'City', 'State', 'SIC /NAICS', 'ADJ', 'Accrual', 'Note Date',
+_cols =  ['Pck / Deal','GP#', 'Days', 'Borrower Name', 'City', 'State', 'SIC / NAICS', 'ADJ', 'Accrual', 'Note Date',
 'Note Maturity', 'Int. Paid to Date', 'Loan Spread', 'Loan Rate',
 'Strip Rate', 'Original Balance', 'Current Balance', 'Multiple', 
 'Proceeds', 'Term', 'Age', 'Rmos', 'Industry', 'Prepayment Penalty',
