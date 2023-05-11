@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from openpyxl import load_workbook
 from loantape import LoanTape
+import base64
 
 def load_excel_file(file):
     wb = load_workbook(file)
@@ -35,7 +36,13 @@ if st.button('Create Loantape'):
     test_df = loan_tape.test_rj()
     st.write(test_df)
 
+    if not test_df.empty:
+    # Create a download button for the test_df
+        csv = test_df.to_csv(index=False)
+        b64 = base64.b64encode(csv.encode()).decode()
+        href = f'<a href="data:file/csv;base64,{b64}" download="test_df.csv">Download Test DataFrame</a>'
+        st.markdown(href, unsafe_allow_html=True)
 
 
-    # st.write(loan_tape.df)
+    
     
