@@ -1,8 +1,10 @@
 # package_analyzer
-A streamlit app and libs to format loan packages from different lenders
-
+A streamlit app and libs to format loan packages from different lenders and combine into a consistent loantape
+___
 ### to-dos
 -- backend
+
+test current user experience --> see how you can break it
 
 finalize loantape class --> create ColResolvers where needed
 
@@ -16,4 +18,4 @@ build strats.py and paginate streamlit app
 
 build download buttons 
 
-add openpyxl code 
+add openpyxl code
