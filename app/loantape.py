@@ -9,7 +9,6 @@ import column_map
 def rm_unnamed(_cols:list)->list:
     return [c for c in _cols if "unnamed" not in str(c).lower()]
 
-
 class LoanTape:
     df: pd.DataFrame
     raw_dfs: dict
@@ -21,10 +20,12 @@ class LoanTape:
         """Normalize the columns -- remove white space and line breaks"""
         if len(self.raw_dfs):
             # This creates a clone of the dict SELF.RAW_DFS cleaning up the original columns
+            # NOTE -- This section has no error handling right now: any parsing errors will probably occur here
             norm_dfs = {}
             for key, df in self.raw_dfs.items():
                 cols = df.columns.to_list()
                 cols = [c.strip().replace("\n"," ") for c in cols]
+                df.columns = cols
                 df = df[rm_unnamed(cols)]
                 norm_dfs[key] = df
             self.raw_dfs = norm_dfs
@@ -69,28 +70,40 @@ class LoanTape:
                 if match_ratio < .9:
                     continue
                 else:
-                    # If match, format the dataframe
+                    # I need to come up with a way to upload multiple packages at the same time.
                     temp[key] = df.rename(columns=self.format_packages[key])
-                    temp[key]['Pck / Deal'] = key
                     # This could/should be done in the column_map function
+                    temp[key]['Pck / Deal'] = key
                     temp[key]['Industry'] = temp[key]['SIC / NAICS'].map(self.naics)
                     break
         self.raw_dfs.update(temp)
         return None
-    
-    def test_fhn(self):
+
+
+    def resolve_fhn(self):
         fhn_resolver = column_map.FHN_resolver(self.raw_dfs['FHN'], self.correct_columns)
         return fhn_resolver.resolve_columns()
     
-    def test_rj(self):
+    def resolve_rj(self):
         rj_resolver = column_map.RJ_resolver(self.raw_dfs['RJ'], self.correct_columns)
         return rj_resolver.resolve_columns()
     
-    def test_bmo(self):
+    def resolve_bmo(self):
         bmo_resolver = column_map.BMO_resolver(self.raw_dfs['BMO'], self.correct_columns)
         return bmo_resolver.resolve_columns()
     
-    
+
+    def resolve_columns(self):
+        for key in self.raw_dfs.keys():
+            match key:
+                case 'FHN':
+                    self.raw_dfs[key] = self.resolve_fhn()
+                case 'RJ':
+                    self.raw_dfs[key] = self.resolve_rj()
+                case 'BMO':
+                    self.raw_dfs[key] = self.resolve_bmo()
+
+
     def combine_raw_dfs(self):
         temp = []
         # Combine the dfs with formatted columns -- excluding the originals (non-destructive)
