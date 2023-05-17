@@ -13,6 +13,11 @@ class ColResolver(ABC):
     out_df: pd.DataFrame
     col_order: list
     
+    @abstractmethod
+    def __init__(self, df, output_columns)->None:
+        self.in_df = df
+        self.col_order = output_columns
+    
     # 1)
     @abstractmethod
     def create_blank_column(self, new_column:str):
@@ -62,9 +67,8 @@ class ColResolver(ABC):
 
 class FHN_resolver(ColResolver):
 
-    def __init__(self, df: pd.DataFrame, output_columns: list)->None:
-        self.in_df = df
-        self.col_order = output_columns
+    def __init__(self, df, output_columns) -> None:
+        super().__init__(df, output_columns)
 
     def create_blank_column(self, new_column: str):
         return super().create_blank_column(new_column)
@@ -109,9 +113,9 @@ class FHN_resolver(ColResolver):
     
 
 class RJ_resolver(ColResolver):
-    def __init__(self, df: pd.DataFrame, output_columns: list)->None:
-        self.in_df = df
-        self.col_order = output_columns
+
+    def __init__(self, df, output_columns) -> None:
+        super().__init__(df, output_columns)
     
     def create_blank_column(self, new_column: str):
         return super().create_blank_column(new_column)
@@ -131,9 +135,9 @@ class RJ_resolver(ColResolver):
 
 
 class BMO_resolver(ColResolver):
-    def __init__(self, df: pd.DataFrame, output_columns: list)->None:
-        self.in_df = df
-        self.col_order = output_columns
+
+    def __init__(self, df, output_columns) -> None:
+        super().__init__(df, output_columns)
 
     def create_blank_column(self, new_column: str):
         return super().create_blank_column(new_column)
