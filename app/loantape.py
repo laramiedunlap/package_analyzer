@@ -86,7 +86,11 @@ class LoanTape:
         rj_resolver = column_map.RJ_resolver(self.raw_dfs['RJ'], self.correct_columns)
         return rj_resolver.resolve_columns()
     
-
+    def test_bmo(self):
+        bmo_resolver = column_map.BMO_resolver(self.raw_dfs['BMO'], self.correct_columns)
+        return bmo_resolver.resolve_columns()
+    
+    
     def combine_raw_dfs(self):
         temp = []
         # Combine the dfs with formatted columns -- excluding the originals (non-destructive)

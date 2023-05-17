@@ -130,6 +130,24 @@ class RJ_resolver(ColResolver):
         return super().resolve_columns()
 
 
+class BMO_resolver(ColResolver):
+    def __init__(self, df: pd.DataFrame, output_columns: list)->None:
+        self.in_df = df
+        self.col_order = output_columns
+
+    def create_blank_column(self, new_column: str):
+        return super().create_blank_column(new_column)
+    
+    def sort_columns(self):
+        return super().sort_columns()
+    
+    def run_methods(self):
+        return super().run_methods()
+    
+    def resolve_columns(self):
+        return super().resolve_columns()
+
+
 
 
     

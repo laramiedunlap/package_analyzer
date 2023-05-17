@@ -33,7 +33,7 @@ if st.button('Create Loantape'):
     loan_tape = LoanTape(clean_columns=_cols, data=raw_data)
     
     loan_tape.format_columns()
-    test_df = loan_tape.test_rj()
+    test_df = loan_tape.test_bmo()
     st.write(test_df)
 
     if not test_df.empty:
