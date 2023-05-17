@@ -58,7 +58,7 @@ class LoanTape:
         # At this point, the pointer == 'unknown_n'
         temp = {}
         for df in self.raw_dfs.values():
-            # for each dataframe, get the columns
+            # for each dataframe the user uploaded, get the columns
             temp_cols = set(df.columns.to_list())
             # for each possible format type:
             for key in format_keys:
