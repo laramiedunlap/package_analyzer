@@ -6,8 +6,27 @@ import os
 
 import column_map
 
+
+# NOTE -- These are helper functions for the LoanTape Class -- I felt they shouldn't be included inside the class
+# but they could be
+
 def rm_unnamed(_cols:list)->list:
     return [c for c in _cols if "unnamed" not in str(c).lower()]
+
+def flatten(list_of_lists):
+    return [item for sublist in list_of_lists for item in sublist]
+
+def pkg_increment(temp_dict:dict, curr_key:str):
+    """formatting the dictionary inside the format_columns method to ensure collisions don't occur from multiple pkg 
+    uploads from the same counterparty"""   
+    key_list = list(temp_dict.keys())
+    key_list = flatten([e.split('_') for e in key_list])
+    if curr_key not in key_list:
+        return f"{curr_key}_1"         
+    else:
+        next_elem = key_list[key_list.index(curr_key)+1]
+        if next_elem.isdigit():
+            return f"{curr_key}_{int(next_elem)+1}"
 
 class LoanTape:
     df: pd.DataFrame
@@ -30,8 +49,6 @@ class LoanTape:
                 norm_dfs[key] = df
             self.raw_dfs = norm_dfs
         else:
-            # This probably needs to be changed to a try-except block
-            # So that an error gets raised to the user
             print("No raw loan data")
         return None
 
@@ -52,6 +69,7 @@ class LoanTape:
         # self.raw_dfs = [df[self.rm_unnamed(df.columns.to_list())] for df in self.raw_dfs]
         self.format_packages = self.load_format_packges()
 
+
     def format_columns(self):
         """Use the format packages to reformat the raw data"""
         # get all available formats
@@ -70,38 +88,39 @@ class LoanTape:
                 if match_ratio < .9:
                     continue
                 else:
-                    # I need to come up with a way to upload multiple packages at the same time.
-                    temp[key] = df.rename(columns=self.format_packages[key])
+                    new_pkg_key = pkg_increment(temp_dict = temp, curr_key = key)
+                    temp[new_pkg_key] = df.rename(columns=self.format_packages[key])
                     # This could/should be done in the column_map function
-                    temp[key]['Pck / Deal'] = key
-                    temp[key]['Industry'] = temp[key]['SIC / NAICS'].map(self.naics)
+                    temp[new_pkg_key]['Pck / Deal'] = new_pkg_key
+                    temp[new_pkg_key]['Industry'] = temp[new_pkg_key]['SIC / NAICS'].map(self.naics)
                     break
         self.raw_dfs.update(temp)
         return None
 
 
-    def resolve_fhn(self):
-        fhn_resolver = column_map.FHN_resolver(self.raw_dfs['FHN'], self.correct_columns)
+    def resolve_fhn(self, in_df):
+        fhn_resolver = column_map.FHN_resolver(in_df, self.correct_columns)
         return fhn_resolver.resolve_columns()
     
-    def resolve_rj(self):
-        rj_resolver = column_map.RJ_resolver(self.raw_dfs['RJ'], self.correct_columns)
+    def resolve_rj(self, in_df):
+        rj_resolver = column_map.RJ_resolver(in_df, self.correct_columns)
         return rj_resolver.resolve_columns()
     
-    def resolve_bmo(self):
-        bmo_resolver = column_map.BMO_resolver(self.raw_dfs['BMO'], self.correct_columns)
+    def resolve_bmo(self, in_df):
+        bmo_resolver = column_map.BMO_resolver(in_df, self.correct_columns)
         return bmo_resolver.resolve_columns()
     
 
     def resolve_columns(self):
         for key in self.raw_dfs.keys():
-            match key:
+            pkg_type = str(key).split('_')[0]
+            match pkg_type:
                 case 'FHN':
-                    self.raw_dfs[key] = self.resolve_fhn()
+                    self.raw_dfs[key] = self.resolve_fhn(self.raw_dfs[key])
                 case 'RJ':
-                    self.raw_dfs[key] = self.resolve_rj()
+                    self.raw_dfs[key] = self.resolve_rj(self.raw_dfs[key])
                 case 'BMO':
-                    self.raw_dfs[key] = self.resolve_bmo()
+                    self.raw_dfs[key] = self.resolve_bmo(self.raw_dfs[key])
 
 
     def combine_raw_dfs(self):
