@@ -35,16 +35,16 @@ if st.button('Create Loantape'):
     loan_tape.format_columns()
     loan_tape.resolve_columns()
     for key in loan_tape.raw_dfs:
-
+        st.write(key)
         test_df = loan_tape.raw_dfs[key]
         st.write(test_df)
 
-    # if not test_df.empty:
-    # # Create a download button for the test_df
-    #     csv = test_df.to_csv(index=False)
-    #     b64 = base64.b64encode(csv.encode()).decode()
-    #     href = f'<a href="data:file/csv;base64,{b64}" download="test_df.csv">Download Test DataFrame</a>'
-    #     st.markdown(href, unsafe_allow_html=True)
+        if not test_df.empty:
+        # Create a download button for the test_df
+            csv = test_df.to_csv(index=False)
+            b64 = base64.b64encode(csv.encode()).decode()
+            href = f'<a href="data:file/csv;base64,{b64}" download="test_df.csv">Download Test DataFrame</a>'
+            st.markdown(href, unsafe_allow_html=True)
 
 
     
