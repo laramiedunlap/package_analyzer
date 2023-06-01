@@ -1,5 +1,6 @@
 import pandas as pd
 from abc import ABC, abstractmethod
+from typing import Optional, Sequence
 
 # Classes for resolving column discrepancies between our loan tape format and the one a lender sends
 # Create a new format by writing the json pointers for that format, then create a new ColResolver for that format
@@ -7,6 +8,8 @@ from abc import ABC, abstractmethod
 # def method_name(self):
     # return super().method_name()
 # Please read note on column method decorator --> methods designed to operate on a column need the decorator
+# All of the @abstractmethod decorated functions must be present in the children classes. This guarantees that every loantape is handled programmtically the same way
+
 
 class ColResolver(ABC):
     in_df: pd.DataFrame
@@ -14,9 +17,37 @@ class ColResolver(ABC):
     col_order: list
     
     @abstractmethod
-    def __init__(self, df, output_columns)->None:
+    def __init__(self, df, output_columns)-> None:
         self.in_df = df
         self.col_order = output_columns
+    
+    # These methods aren't explicilty required to be implemented, but if you want them you can use them
+    def find_digit(str_value: str) -> float:
+        """Converts common excel style number formats"""
+        temp_bin = []
+        temp_values = [1,1]
+        for ch in str_value:
+            if '-' in ch or '.' in ch:
+                temp_bin.append(ch)
+            elif ch.isdigit():
+                temp_bin.append(ch)
+            elif ch == "(":
+                temp_values[0] = -1
+            elif ch == "%":
+                temp_values[1] = 100
+        new_value = ''.join(temp_bin)
+        if new_value != '':
+            return (float(new_value) * temp_values[0] ) / temp_values[1]
+        else: 
+            return str_value
+
+    def convert_number_formats(self, excluded_columns: Optional[Sequence] = None) -> None:
+        """Converts common excel style number formatts across a dataframe"""
+        if excluded_columns is None:
+            excluded_columns = []
+        for col in self.in_df.columns:
+            if col not in excluded_columns and self.in_df[col].dtype == 'object':
+                self.in_df[col] = self.in_df[col].apply(lambda x: self.find_digit(x) if pd.notnull(x) else x)
     
     # 1)
     @abstractmethod
@@ -63,6 +94,7 @@ class ColResolver(ABC):
         
         self.out_df = self.sort_columns()
         return self.out_df
+
 
 
 class FHN_resolver(ColResolver):
@@ -150,6 +182,8 @@ class BMO_resolver(ColResolver):
     
     def resolve_columns(self):
         return super().resolve_columns()
+    
+
 
 
 
