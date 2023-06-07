@@ -80,10 +80,10 @@ class ColResolver(ABC):
     
     # 4)
     @abstractmethod
-    def resolve_columns(self):
+    def resolve_columns(self)->pd.DataFrame:
         """Equivalent of running main() on the Class if it were a standalone script -- run all methods,
         check for resolution by creating blank columns to match the users column order,
-        sort the columns, and set the out_df attribute"""
+        sort the columns, and set the out_df attribute. This function returns the final dataframe."""
         self.run_methods()
         existing_columns = set(self.in_df.columns.to_list())
         desired_columns = set(self.col_order)
@@ -123,6 +123,14 @@ class FHN_resolver(ColResolver):
     @ColResolver.column_method
     def original_balance(self):
         self.in_df['Original Balance'] = self.in_df['Current Balance']
+
+    @ColResolver.column_method
+    def strip_rate(self):
+        self.in_df['Strip Rate'] = self.in_df['Strip Rate'] / 100
+    
+    @ColResolver.column_method
+    def loan_spread(self):
+        self.in_df['Loan Spread'] = self.in_df['Loan Spread'] / 100
 
     @ColResolver.column_method
     def proceeds(self):
