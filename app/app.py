@@ -5,9 +5,8 @@ import base64
 import datetime
 from typing import Optional
 
-st.title("Package File Uploader")
+st.title("Package Analyzer")
 
-files = st.file_uploader("Upload a csv file (columns and data)", type=["csv"], accept_multiple_files=True)
 
 # These are the columns for the finished loan tape
 _cols =  ['Pck / Deal','GP#', 'Borrower Name', 'City', 'State', 'SIC / NAICS', 'ADJ', 'Accrual', 'Note Date',
@@ -16,7 +15,9 @@ _cols =  ['Pck / Deal','GP#', 'Borrower Name', 'City', 'State', 'SIC / NAICS', '
 'Proceeds', 'Term', 'Age', 'Rmos', 'Industry', 'Prepayment Penalty',
 'Term Bucket', 'Industry Bucket', 'Lender', 'Prepayment Notice']
 
-custom_ss_keys =['loan_tape_form_change','static_mult_chkbox','user_static_multiple']
+
+custom_ss_keys =['loan_tape_form_change','static_mult_chkbox','user_static_multiple','user_stlmt_date','user_prime_rate']
+
 
 def init_session_state_keys():
     if 'loan_tape_form_change' not in st.session_state:
@@ -25,6 +26,10 @@ def init_session_state_keys():
         st.session_state['static_mult_chkbox'] = False
     if 'user_static_multiple' not in st.session_state:
         st.session_state['user_static_multiple'] = None
+    if 'user_stlmt_date' not in st.session_state:
+        st.session_state['user_stlmt_date'] = None
+    if 'user_prime_rate' not in st.session_state:
+        st.session_state['user_prime_rate'] = None
 
 init_session_state_keys()
 
@@ -35,35 +40,39 @@ def static_multiple_callback(cond:bool, static_val: Optional[float]=None)->None:
     else:
         st.session_state['user_static_multiple'] = None
 
-def form_callback(params=None)->None:
+def lt_form_callback(params:dict)->None:
     st.session_state['loan_tape_form_change'] = True
-    st.write(st.session_state['loan_tape_form_change'])
+    # passes the status of the static multiple checkbox and the static multiple to the callback
+    static_multiple_callback(cond=params['static_mult_chkbox'], static_val=params['user_static_multiple'])
+    st.session_state['user_stlmt_date'] = params['user_stlmt_date']
+    st.session_state['user_prime_rate'] = params['user_prime_rate']
 
 # This code allows users to set the prime rate and projected settlement date
 with st.sidebar:
     with st.form("loan_tape_form"):
         st.write("Set the Prime Rate:")
-        user_prime_rate =st.number_input(label='Prime Rate',value=8.000,step=0.1)
-
+        _prime_rate =st.number_input(label='Prime Rate',value=8.000,step=0.1)
+        _prime_rate = round(_prime_rate,3)
         st.write("Set the Projected Settlement Date:")
         todays_date = datetime.date.today()
-        user_stlmt_date = st.date_input(label='Default: 50 days from today', value=todays_date+datetime.timedelta(days=50))
+        _stlmt_date = st.date_input(label='Default: 50 days from today', value=todays_date+datetime.timedelta(days=50) )
 
         mult_choice = st.checkbox(label="Set Static Multiple")
-        if mult_choice:
-            static_multiple = st.number_input(label='Multiple', value=3.500, step=.1)
-        else:
-            static_multiple = None
+        static_multiple = st.number_input(label='Multiple', value=3.500, step=.1)
+        static_multiple = round(static_multiple,3)
+        params = dict(static_mult_chkbox = mult_choice, user_static_multiple=static_multiple, 
+                      user_stlmt_date=_stlmt_date, user_prime_rate=_prime_rate)
         # Every form must have a submit button.
-        submitted = st.form_submit_button("Submit", on_click=form_callback)
-    
-        
+        submitted = st.form_submit_button("Create LoanTape")
+        if submitted:
+            lt_form_callback(params)
+
+files = st.file_uploader("Upload a csv file (columns and data)", type=["csv"], accept_multiple_files=True)
 
 if files is not None:
-    st.write(st.session_state['loan_tape_form_change'])
-        
-    if st.button('Create Loantape') or st.session_state['loan_tape_form_change']:
-        st.session_state['loan_tape_form_change'] = False
+    if submitted:
+        prime_rate = st.session_state.user_prime_rate
+        st.write(st.session_state.user_prime_rate)
         raw_data = list()
         for f in files:
             raw_data.append(pd.read_csv(f))
@@ -83,7 +92,8 @@ if files is not None:
                     b64 = base64.b64encode(csv.encode()).decode()
                     href = f'<a href="data:file/csv;base64,{b64}" download="test_df.csv">Download Test DataFrame</a>'
                     st.markdown(href, unsafe_allow_html=True)
+        st.session_state['loan_tape_form_change'] = False
 else:
-    st.write('Please add CSVS of your loantapes to the file drop location above')
+    st.write('Please add CSVS of your loantapes to the file drop location in the sidebar')
 
         
