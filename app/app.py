@@ -3,6 +3,7 @@ import pandas as pd
 from loantape import LoanTape
 import base64
 import datetime
+from typing import Optional
 
 st.title("Package File Uploader")
 
@@ -15,33 +16,52 @@ _cols =  ['Pck / Deal','GP#', 'Borrower Name', 'City', 'State', 'SIC / NAICS', '
 'Proceeds', 'Term', 'Age', 'Rmos', 'Industry', 'Prepayment Penalty',
 'Term Bucket', 'Industry Bucket', 'Lender', 'Prepayment Notice']
 
+custom_ss_keys =['loan_tape_form_change','static_mult_chkbox','user_static_multiple']
 
-if 'loan_tape_form_change' not in st.session_state:
+def init_session_state_keys():
+    if 'loan_tape_form_change' not in st.session_state:
+        st.session_state['loan_tape_form_change'] = False
+    if 'static_mult_chkbox' not in st.session_state:
+        st.session_state['static_mult_chkbox'] = False
+    if 'user_static_multiple' not in st.session_state:
+        st.session_state['user_static_multiple'] = None
+
+init_session_state_keys()
+
+def static_multiple_callback(cond:bool, static_val: Optional[float]=None)->None:
+    st.session_state['static_mult_chkbox'] = cond
+    if static_val:
+        st.session_state['user_static_multiple'] = static_val
+    else:
+        st.session_state['user_static_multiple'] = None
+
+def form_callback(params=None)->None:
     st.session_state['loan_tape_form_change'] = True
-
-def form_callback():
-    st.session_state['loan_tape_form_change'] = True
-
+    st.write(st.session_state['loan_tape_form_change'])
 
 # This code allows users to set the prime rate and projected settlement date
 with st.sidebar:
     with st.form("loan_tape_form"):
         st.write("Set the Prime Rate:")
         user_prime_rate =st.number_input(label='Prime Rate',value=8.000,step=0.1)
+
         st.write("Set the Projected Settlement Date:")
         todays_date = datetime.date.today()
         user_stlmt_date = st.date_input(label='Default: 50 days from today', value=todays_date+datetime.timedelta(days=50))
+
         mult_choice = st.checkbox(label="Set Static Multiple")
         if mult_choice:
             static_multiple = st.number_input(label='Multiple', value=3.500, step=.1)
         else:
             static_multiple = None
         # Every form must have a submit button.
-        submitted = st.form_submit_button("Submit",on_click=form_callback)
+        submitted = st.form_submit_button("Submit", on_click=form_callback)
     
         
 
 if files is not None:
+    st.write(st.session_state['loan_tape_form_change'])
+        
     if st.button('Create Loantape') or st.session_state['loan_tape_form_change']:
         st.session_state['loan_tape_form_change'] = False
         raw_data = list()

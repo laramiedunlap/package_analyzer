@@ -17,13 +17,17 @@ class ColResolver(ABC):
     col_order: list
     
     @abstractmethod
-    def __init__(self, df, output_columns)-> None:
+    def __init__(self, df, output_columns, params=None)-> None:
         self.in_df = df
         self.col_order = output_columns
+        # This allows users to set some options (like multiple, settlement date, etc.) without needing to set all of them
+        if params is not None:
+            for key, value in params.items():
+                setattr(self,key,value)
     
-    # These methods aren't explicilty required to be implemented, but if you want them you can use them
+    # A) These next two methods aren't explicilty required to be implemented, but if you want them you can use them
     def find_digit(str_value: str) -> float:
-        """Converts common excel style number formats"""
+        """Converts common excel style number formats."""
         temp_bin = []
         temp_values = [1,1]
         for ch in str_value:
@@ -40,9 +44,9 @@ class ColResolver(ABC):
             return (float(new_value) * temp_values[0] ) / temp_values[1]
         else: 
             return str_value
-
+    # B) This method is not required to be implemented, but can accomplish all the 
     def convert_number_formats(self, excluded_columns: Optional[Sequence] = None) -> None:
-        """Converts common excel style number formatts across a dataframe"""
+        """Converts common excel style number formats across a dataframe -- applies the find_digit function element-wise"""
         if excluded_columns is None:
             excluded_columns = []
         for col in self.in_df.columns:
@@ -60,7 +64,7 @@ class ColResolver(ABC):
         """Make sure the columns are in the correct order"""
         return self.in_df[self.col_order]
     
-    # Decorator that tells the class the method you're making is a column method ()
+    # Decorator that tells the class that the method you're making is a column method ()
     # ** NOTE ** you do --NOT-- need to define this decorator in the subclass, just use this decorator:
     # @ColResolver.column_method on your column functions
     @staticmethod
