@@ -15,6 +15,8 @@ _cols =  ['Pck / Deal','GP#', 'Borrower Name', 'City', 'State', 'SIC / NAICS', '
 'Proceeds', 'Term', 'Age', 'Rmos', 'Industry', 'Prepayment Penalty',
 'Term Bucket', 'Industry Bucket', 'Lender', 'Prepayment Notice']
 
+# Tell the backend which of the user columns are date columns that will already contain date data
+_date_cols = ['Note Date','Note Maturity']
 
 custom_ss_keys =['loan_tape_form_change','static_mult_chkbox','user_static_multiple','user_stlmt_date','user_prime_rate']
 
@@ -30,10 +32,13 @@ def init_session_state_keys():
         st.session_state['user_stlmt_date'] = None
     if 'user_prime_rate' not in st.session_state:
         st.session_state['user_prime_rate'] = None
+    if 'user_date_cols' not in st.session_state:
+        st.session_state['user_date_cols'] = _date_cols
 
 init_session_state_keys()
 
 def static_multiple_callback(cond:bool, static_val: Optional[float]=None)->None:
+    """Just check the status of the box and the value"""
     st.session_state['static_mult_chkbox'] = cond
     if static_val:
         st.session_state['user_static_multiple'] = static_val
@@ -41,6 +46,7 @@ def static_multiple_callback(cond:bool, static_val: Optional[float]=None)->None:
         st.session_state['user_static_multiple'] = None
 
 def lt_form_callback(params:dict)->None:
+    """Don't use this directly from the form button -- values won't update till next rerun"""
     st.session_state['loan_tape_form_change'] = True
     # passes the status of the static multiple checkbox and the static multiple to the callback
     static_multiple_callback(cond=params['static_mult_chkbox'], static_val=params['user_static_multiple'])
@@ -77,10 +83,10 @@ if files is not None:
         for f in files:
             raw_data.append(pd.read_csv(f))
 
-        loan_tape = LoanTape(clean_columns=_cols, data=raw_data)
+        loan_tape = LoanTape(clean_columns=_cols, data=raw_data, params= st.session_state)
         loan_tape.format_columns()
         loan_tape.resolve_columns()
-
+        st.write(loan_tape.session_params)
         for key in loan_tape.raw_dfs:
             if 'unknown' not in key:
                 test_df = loan_tape.raw_dfs[key]

@@ -34,6 +34,7 @@ class LoanTape:
     naics: dict
     format_packages: dict
     correct_columns: list
+    session_params: dict
 
     def norm_raw_cols(self):
         """Normalize the columns -- remove white space and line breaks"""
@@ -59,14 +60,15 @@ class LoanTape:
         format_opts = json.load(pkg_file)
         return format_opts
     
-    def __init__(self, clean_columns, data=list()):
+    def __init__(self, clean_columns, data=list(), params:dict=None ):
+        if params:
+            self.session_params = params
         self.correct_columns = clean_columns
         self.df = pd.DataFrame(columns=clean_columns)
         self.raw_dfs = {f'unknown_{i}': df for i, df in enumerate(data)}
         self.norm_raw_cols()
         naics_tbl = pd.read_csv('package_maps/NAICS_2017.csv')
         self.naics = dict(naics_tbl.values)
-        # self.raw_dfs = [df[self.rm_unnamed(df.columns.to_list())] for df in self.raw_dfs]
         self.format_packages = self.load_format_packges()
 
 
@@ -99,15 +101,15 @@ class LoanTape:
 
 
     def resolve_fhn(self, in_df):
-        fhn_resolver = column_map.FHN_resolver(in_df, self.correct_columns)
+        fhn_resolver = column_map.FHN_resolver(in_df, self.correct_columns, self.session_params)
         return fhn_resolver.resolve_columns()
     
     def resolve_rj(self, in_df):
-        rj_resolver = column_map.RJ_resolver(in_df, self.correct_columns)
+        rj_resolver = column_map.RJ_resolver(in_df, self.correct_columns, self.session_params)
         return rj_resolver.resolve_columns()
     
     def resolve_bmo(self, in_df):
-        bmo_resolver = column_map.BMO_resolver(in_df, self.correct_columns)
+        bmo_resolver = column_map.BMO_resolver(in_df, self.correct_columns, self.session_params)
         return bmo_resolver.resolve_columns()
     
 
