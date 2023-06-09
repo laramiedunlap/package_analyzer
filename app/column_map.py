@@ -43,7 +43,7 @@ class ColResolver(ABC):
     out_df: pd.DataFrame
     col_order: list
 
-    @abstractmethod
+    
     def __init__(self, df, output_columns, params=None)-> None:
         self.in_df = df
         self.col_order = output_columns
@@ -83,7 +83,6 @@ class ColResolver(ABC):
                 self.in_df[col] = self.in_df[col].apply(lambda x: self.find_digit(x) if pd.notnull(x) else x)
 
     # C) This method converts excel datetime numbers to datetime.dates --> see helper function above class definition
-    @abstractmethod
     def convert_date_strings(self) -> None:
         if self.__getattribute__('user_date_cols') is not None:
             for c in self.user_date_cols:
@@ -92,24 +91,11 @@ class ColResolver(ABC):
                 new_dates = [d for d in map(conv_date, dates)]
                 self.in_df[c] = new_dates
 
-    # D) This method sets the Int. Paid to Date --> usually you will need to do this for every LoanTape
-    @abstractmethod
-    def int_paid_to_date(self):
-        """This method will set the `Int. Paid To Date` column"""
-        if self.__getattribute__('user_stlmt_date') is not None:
-            settlement_date = self.__getattribute__('user_stlmt_date')
-            self.in_df['Int. Paid to Date'] = self.in_df['Note Date'].apply(lambda x: max( settlement_date-pd.Timedelta(50,'D') , x) )
-        else:
-            # This is technically an error that we may want to display on the front end
-            print("No int to date")
-
     # 1)
-    @abstractmethod
     def create_blank_column(self, new_column:str):
         self.in_df[new_column] = None
 
     # 2)
-    @abstractmethod
     def sort_columns(self):
         """Make sure the columns are in the correct order"""
         return self.in_df[self.col_order]
@@ -125,6 +111,16 @@ class ColResolver(ABC):
         setattr(func, "is_column_method", True)
         return func
     
+    # D) This method sets the Int. Paid to Date --> usually you will need to do this for every LoanTape
+    @column_method
+    def int_paid_to_date(self):
+        """This method will set the `Int. Paid To Date` column"""
+        if self.__getattribute__('user_stlmt_date') is not None:
+            settlement_date = self.__getattribute__('user_stlmt_date')
+            self.in_df['Int. Paid to Date'] = self.in_df['Note Date'].apply(lambda x: max(settlement_date-pd.Timedelta(50,'D') , x) )
+        else:
+            # This is technically an error that we may want to display on the front end
+            print("No int to date")
     
     # 3)
     def run_methods(self):
@@ -135,7 +131,6 @@ class ColResolver(ABC):
             method()
     
     # 4)
-    @abstractmethod
     def resolve_columns(self)->pd.DataFrame:
         """Equivalent of running main() on the Class if it were a standalone script -- run all methods,
         check for resolution by creating blank columns to match the users column order,
@@ -156,122 +151,46 @@ class ColResolver(ABC):
 
 class FHN_resolver(ColResolver):
 
-    def __init__(self, df, output_columns, params) -> None:
-        super().__init__(df, output_columns, params)
-
-    def create_blank_column(self, new_column: str):
-        return super().create_blank_column(new_column)
-    
-    def sort_columns(self):
-        return super().sort_columns()
-    
-    def run_methods(self):
-        return super().run_methods()
-
-    def convert_date_strings(self) -> None:
-        return super().convert_date_strings()
-    
-    @ColResolver.column_method
-    def int_paid_to_date(self) -> None:
-        return super().int_paid_to_date()
-
     @ColResolver.column_method
     def geo_split(self):
         """For FHN loan tapes, split the city and state out into two columns named `City` and `State`"""
         self.in_df[['City','State']] = self.in_df['func_geosplit'].str.extract(r'^(.*),\s([A-Z]{2})+')
 
     @ColResolver.column_method
-    def int_paid_to_date(self):
-        return super().int_paid_to_date()
-
-    @ColResolver.column_method
-    def loan_rate(self):
-        self.in_df['Loan Rate'] = None
-
-    @ColResolver.column_method
-    def original_balance(self):
-        self.in_df['Original Balance'] = self.in_df['Current Balance']
-
+    def adj_rates(self):
+        """This structure ensures the functions happen in the correct order at runtime, because the results are dependendent"""
+        self.in_df['Loan Spread'] = self.in_df['Loan Spread'] / 100
+        if self.__getattribute__('user_prime_rate'):
+            self.in_df['Loan Rate'] = self.in_df['Loan Spread'] + self.user_prime_rate
+        else:
+            self.in_df['Loan Rate'] = None
+    
     @ColResolver.column_method
     def strip_rate(self):
         self.in_df['Strip Rate'] = self.in_df['Strip Rate'] / 100
-    
-    @ColResolver.column_method
-    def loan_spread(self):
-        self.in_df['Loan Spread'] = self.in_df['Loan Spread'] / 100
 
     @ColResolver.column_method
-    def proceeds(self):
-        self.in_df['Proceeds'] = None
+    def original_balance(self):
+        self.in_df['Original Balance'] = self.in_df['Current Balance']
 
-    @ColResolver.column_method
-    def term(self):
-        self.in_df['Term'] = None
-
-    @ColResolver.column_method
-    def age(self):
-        self.in_df['Age'] = None
-
-    @ColResolver.column_method
-    def rmos(self):
-        self.in_df['Rmos'] = None
-
-    def resolve_columns(self):
-        return super().resolve_columns()
-    
 
 class RJ_resolver(ColResolver):
-
-    def __init__(self, df, output_columns, params) -> None:
-        super().__init__(df, output_columns, params)
-    
-    def create_blank_column(self, new_column: str):
-        return super().create_blank_column(new_column)
-    
-    def convert_date_strings(self) -> None:
-        return super().convert_date_strings()
-    
-    @ColResolver.column_method
-    def int_paid_to_date(self) -> None:
-        return super().int_paid_to_date()
     
     @ColResolver.column_method
     def original_balance(self):
         self.in_df['Original Balance'] = self.in_df['Current Balance']
     
-    def sort_columns(self):
-        return super().sort_columns()
-    
-    def run_methods(self):
-        return super().run_methods()
-    
-    def resolve_columns(self):
-        return super().resolve_columns()
-
 
 class BMO_resolver(ColResolver):
-
-    def __init__(self, df, output_columns, params) -> None:
-        super().__init__(df, output_columns, params)
-
-    def create_blank_column(self, new_column: str):
-        return super().create_blank_column(new_column)
-    
-    def convert_date_strings(self) -> None:
-        return super().convert_date_strings()
     
     @ColResolver.column_method
-    def int_paid_to_date(self) -> None:
-        return super().int_paid_to_date()
+    def adj_rates(self):
+        self.in_df['Loan Rate'] = self.in_df['Loan Rate']/100
+        self.in_df['Loan Spread'] = self.in_df['Loan Spread']/100
+        self.in_df['Strip Rate'] = self.in_df['Strip Rate']/100
+        
     
-    def sort_columns(self):
-        return super().sort_columns()
-    
-    def run_methods(self):
-        return super().run_methods()
-    
-    def resolve_columns(self):
-        return super().resolve_columns()
+
     
 
 

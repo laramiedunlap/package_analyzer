@@ -51,7 +51,7 @@ def lt_form_callback(params:dict)->None:
     # passes the status of the static multiple checkbox and the static multiple to the callback
     static_multiple_callback(cond=params['static_mult_chkbox'], static_val=params['user_static_multiple'])
     st.session_state['user_stlmt_date'] = params['user_stlmt_date']
-    st.session_state['user_prime_rate'] = params['user_prime_rate']
+    st.session_state['user_prime_rate'] = params['user_prime_rate']/100
 
 # This code allows users to set the prime rate and projected settlement date
 with st.sidebar:
@@ -78,7 +78,6 @@ files = st.file_uploader("Upload a csv file (columns and data)", type=["csv"], a
 if files is not None:
     if submitted:
         prime_rate = st.session_state.user_prime_rate
-        st.write(st.session_state.user_prime_rate)
         raw_data = list()
         for f in files:
             raw_data.append(pd.read_csv(f))
@@ -86,7 +85,7 @@ if files is not None:
         loan_tape = LoanTape(clean_columns=_cols, data=raw_data, params= st.session_state)
         loan_tape.format_columns()
         loan_tape.resolve_columns()
-        st.write(loan_tape.session_params)
+        
         for key in loan_tape.raw_dfs:
             if 'unknown' not in key:
                 test_df = loan_tape.raw_dfs[key]
