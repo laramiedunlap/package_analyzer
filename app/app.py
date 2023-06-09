@@ -57,7 +57,7 @@ def lt_form_callback(params:dict)->None:
 with st.sidebar:
     with st.form("loan_tape_form"):
         st.write("Set the Prime Rate:")
-        _prime_rate =st.number_input(label='Prime Rate',value=8.000,step=0.1)
+        _prime_rate =st.number_input(label='Prime Rate',value=8.000,step=0.05)
         _prime_rate = round(_prime_rate,3)
         st.write("Set the Projected Settlement Date:")
         todays_date = datetime.date.today()
