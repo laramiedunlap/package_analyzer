@@ -7,7 +7,6 @@ from typing import Optional
 
 st.title("Package Analyzer")
 
-
 # These are the columns for the finished loan tape
 _cols =  ['Pck / Deal','GP#', 'Borrower Name', 'City', 'State', 'SIC / NAICS', 'ADJ', 'Accrual', 'Note Date',
 'Note Maturity', 'Int. Paid to Date', 'Loan Spread', 'Loan Rate',
@@ -73,32 +72,37 @@ with st.sidebar:
         if submitted:
             lt_form_callback(params)
 
-files = st.file_uploader("Upload a csv file (columns and data)", type=["csv"], accept_multiple_files=True)
+tab1, tab2, tab3 = st.tabs(['Loan Tape', 'Stratifications','Summary'])
 
-if files is not None:
-    if submitted:
-        prime_rate = st.session_state.user_prime_rate
-        raw_data = list()
-        for f in files:
-            raw_data.append(pd.read_csv(f))
+with tab1:
+    st.write(st.version)
+    tab1.subheader('Loan Tape Build')
+    files = st.file_uploader("Upload a csv file (columns and data)", type=["csv"], accept_multiple_files=True)
 
-        loan_tape = LoanTape(clean_columns=_cols, data=raw_data, params= st.session_state)
-        loan_tape.format_columns()
-        loan_tape.resolve_columns()
-        
-        for key in loan_tape.raw_dfs:
-            if 'unknown' not in key:
-                test_df = loan_tape.raw_dfs[key]
-                st.write(test_df)
+    if files is not None:
+        if submitted:
+            prime_rate = st.session_state.user_prime_rate
+            raw_data = list()
+            for f in files:
+                raw_data.append(pd.read_csv(f))
 
-                if not test_df.empty:
-                # Create a download button for the test_df
-                    csv = test_df.to_csv(index=False)
-                    b64 = base64.b64encode(csv.encode()).decode()
-                    href = f'<a href="data:file/csv;base64,{b64}" download="test_df.csv">Download Test DataFrame</a>'
-                    st.markdown(href, unsafe_allow_html=True)
-        st.session_state['loan_tape_form_change'] = False
-else:
-    st.write('Please add CSVS of your loantapes to the file drop location in the sidebar')
+            loan_tape = LoanTape(clean_columns=_cols, data=raw_data, params= st.session_state)
+            loan_tape.format_columns()
+            loan_tape.resolve_columns()
+            
+            for key in loan_tape.raw_dfs:
+                if 'unknown' not in key:
+                    test_df = loan_tape.raw_dfs[key]
+                    st.write(test_df)
 
-        
+                    if not test_df.empty:
+                    # Create a download button for the test_df
+                        csv = test_df.to_csv(index=False)
+                        b64 = base64.b64encode(csv.encode()).decode()
+                        href = f'<a href="data:file/csv;base64,{b64}" download="test_df.csv">Download Test DataFrame</a>'
+                        st.markdown(href, unsafe_allow_html=True)
+            st.session_state['loan_tape_form_change'] = False
+    else:
+        st.write('Please add CSVS of your loantapes to the file drop location in the sidebar')
+
+            

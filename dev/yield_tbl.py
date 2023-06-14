@@ -4,12 +4,6 @@ import numpy_financial as npf
 from collections import OrderedDict
 
 
-
-
-
-
-
-
 # I need to add in kwargs for price, yield, settlement date.
 def amortize(interest_rate: float, begLoanBalance: float, begMonths: int)-> OrderedDict:
     """Create an OrderedDict with a loan's expected amortization schedule"""
