@@ -75,7 +75,6 @@ with st.sidebar:
 tab1, tab2, tab3 = st.tabs(['Loan Tape', 'Stratifications','Summary'])
 
 with tab1:
-    st.write(st.version)
     tab1.subheader('Loan Tape Build')
     files = st.file_uploader("Upload a csv file (columns and data)", type=["csv"], accept_multiple_files=True)
 
@@ -99,7 +98,7 @@ with tab1:
                     # Create a download button for the test_df
                         csv = test_df.to_csv(index=False)
                         b64 = base64.b64encode(csv.encode()).decode()
-                        href = f'<a href="data:file/csv;base64,{b64}" download="test_df.csv">Download Test DataFrame</a>'
+                        href = f'<a href="data:file/csv;base64,{b64}" download="test_df.csv">Download Loan Tape</a>'
                         st.markdown(href, unsafe_allow_html=True)
             st.session_state['loan_tape_form_change'] = False
     else:

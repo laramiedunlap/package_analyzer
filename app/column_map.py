@@ -5,8 +5,12 @@ from abc import ABC, abstractmethod
 from typing import Optional, Sequence
 import re
 from dateutil.relativedelta import relativedelta
+import warnings
+
+warnings.filterwarnings('ignore')
 
 # NOTE: These are helper functions for the COLRESOLVER class -- it can be imported elsewhere but they needs to remain here 
+
 def month_diff(start_date: datetime.date, end_date: datetime.date):
     """Calculate the difference in months between two dates"""
     diff = relativedelta(end_date, start_date)
@@ -46,23 +50,22 @@ def term_map(value):
         4: range(192, 252),
         5: range(252, 500)
     }
-    
     for key, range_values in term_mapping.items():
         if value in range_values:
             return key
-    
     # Return a default value if no match is found
     return None
 
 # Classes for resolving column discrepancies between our loan tape format and the lender format
 # Create a new format by writing the JSON pointers for that format inside the packages.json file, then create a new ColResolver for that format
 # Please read note on column method decorator --> methods designed to operate on a column need the decorator
-# All of the @abstractmethod decorated functions must be present in the children classes. 
+# All of the @abstractmethod decorated functions must be present in the children classes.
 
 class ColResolver(ABC):
     in_df: pd.DataFrame
     out_df: pd.DataFrame
     col_order: list
+    bad_data: pd.DataFrame
 
     def __init__(self, df, output_columns, params=None)-> None:
         self.in_df = df
@@ -130,15 +133,15 @@ class ColResolver(ABC):
         return func
     
     # D) This method sets the Int. Paid to Date --> usually you will need to do this for every LoanTape
-    @column_method
     def int_paid_to_date(self)->None:
         """This method will set the `Int. Paid To Date` column"""
         if self.__getattribute__('user_stlmt_date') is not None:
             settlement_date = self.__getattribute__('user_stlmt_date')
-            self.in_df['Int. Paid to Date'] = self.in_df['Note Date'].apply(lambda x: max(settlement_date-pd.Timedelta(50,'D') , x) )
+            self.in_df['Int. Paid to Date'] = self.in_df['Note Date'].apply(lambda x: max(settlement_date-pd.Timedelta(50,'D') , x) if pd.notnull(x) else None )
         else:
             # This is technically an error that we may want to display on the front end or handle somehow (it would be a very unique corner case)
             print("No int to date")
+
     
     
     def term(self)->None:
@@ -192,6 +195,7 @@ class ColResolver(ABC):
         for method_name in methods:
             method = getattr(self, method_name)
             method()
+        self.int_paid_to_date()
         self.term()
         self.accrual()
         self.age()
@@ -207,21 +211,57 @@ class ColResolver(ABC):
         """Equivalent of running main() on the Class if it were a standalone script -- run all methods,
         check for resolution by creating blank columns to match the users column order,
         sort the columns, and set the out_df attribute. This function returns the final dataframe."""
-        # First, ensure that all date-like variables are correctly formatted 
+
+        # Remove rows without a note date, these will have to be modified by the user for now:
+        missing_note_date = self.in_df[self.in_df['Note Date'].isna()]
+        self.in_df = self.in_df.dropna(subset=['Note Date'])
+
+        # Ensure that all date-like variables are correctly formatted 
         self.convert_date_strings()
-        # Second, run the orchestration method for all the columns
+
+        # Run the orchestration method for all the columns
         self.run_col_methods()
         
         # NOTE--> CODE HERE
-        # Forth, find the difference between the current columns on the in_df and the desired cols `col_order`, and then fill those as blanks  
+        # Find the difference between the current columns on the in_df and the desired cols `col_order`, and then fill those as blanks  
         existing_columns = set(self.in_df.columns.to_list())
         desired_columns = set(self.col_order)
-        
         if existing_columns != desired_columns:
             for column_to_create in list(desired_columns - existing_columns):
                 self.create_blank_column(column_to_create)
+
+        self.in_df = self.sort_columns()
+
+        # Add the missing Note Date rows back at the bottom of the dataframme
+        if not missing_note_date.empty:
+
+            existing_columns = (missing_note_date.columns.to_list())
+            desired_columns = (self.in_df)
+            
+            for col in desired_columns:
+                if col in existing_columns:
+                    continue
+                else:
+                    missing_note_date[col] = np.NaN
+
+            missing_note_date = missing_note_date[self.in_df.columns]
+            
+            
+            # self.in_df = self.in_df.loc[~self.in_df.index.duplicated(keep='first')]
+            # missing_note_date = missing_note_date.loc[~missing_note_date.index.duplicated(keep='first')]
+            try:
+                self.in_df = pd.concat([self.in_df,missing_note_date], axis= 0)
+            except:
+                print(set(self.in_df.columns)- set(missing_note_date.columns))
+                print(len(self.in_df.columns))
+                print(self.in_df.columns)
+                print('----------------')
+                print(len(missing_note_date.columns))
+                print(missing_note_date.columns)
+                raise
         
-        self.out_df = self.sort_columns()
+        self.out_df = self.in_df
+
         return self.out_df
 
 
@@ -249,6 +289,10 @@ class FHN_resolver(ColResolver):
     def original_balance(self):
         self.in_df['Original Balance'] = self.in_df['Current Balance']
 
+    # @ColResolver.column_method
+    # def note_date(self):
+    #     self.in_df = self.in_df[self.in_df['Note Date'].notna()]
+
 
 class RJ_resolver(ColResolver):
     
@@ -263,8 +307,7 @@ class RJ_resolver(ColResolver):
     @ColResolver.column_method
     def set_adj(self):
         self.in_df['ADJ'] = 'Q'
-    
-    
+
 
 
 class BMO_resolver(ColResolver):

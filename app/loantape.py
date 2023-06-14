@@ -10,13 +10,15 @@ import column_map
 # but they could be
 
 def rm_unnamed(_cols:list)->list:
+    """Remove Unnamed columns from a dataframe"""
     return [c for c in _cols if "unnamed" not in str(c).lower()]
 
 def flatten(list_of_lists):
+    """Flatten a list of lists: [[x.y.z],[a,b,c]]->[x,y,z,a,b,c]"""
     return [item for sublist in list_of_lists for item in sublist]
 
 def pkg_increment(temp_dict:dict, curr_key:str):
-    """formatting the dictionary inside the format_columns method to ensure collisions don't occur from multiple pkg 
+    """format the dictionary inside the format_columns method to ensure collisions don't occur from multiple pkg 
     uploads from the same counterparty"""   
     key_list = list(temp_dict.keys())
     key_list = flatten([e.split('_') for e in key_list])
@@ -70,7 +72,6 @@ class LoanTape:
         self.naics = dict(naics_tbl.values)
         self.format_packages = self.load_format_packges()
 
-
     def format_columns(self):
         """Use the format packages to reformat the raw data"""
         # get all available formats
@@ -84,7 +85,7 @@ class LoanTape:
             for key in format_keys:
                 # get the unformatted column names from the format option
                 format_type_keys = set(self.format_packages[key].keys())
-                # see if the format matches ~90% --> if not exact, it will still work and you can debug
+                # NOTE--> if the format matches ~90% --> if not exact, it will still work and you can debug
                 match_ratio = 1-len(temp_cols - format_type_keys) / len(format_type_keys)
                 if match_ratio < .9:
                     continue
@@ -111,7 +112,6 @@ class LoanTape:
         bmo_resolver = column_map.BMO_resolver(in_df, self.correct_columns, self.session_params)
         return bmo_resolver.resolve_columns()
     
-
     def resolve_columns(self):
         for key in self.raw_dfs.keys():
             pkg_type = str(key).split('_')[0]
@@ -122,7 +122,6 @@ class LoanTape:
                     self.raw_dfs[key] = self.resolve_rj(self.raw_dfs[key])
                 case 'BMO':
                     self.raw_dfs[key] = self.resolve_bmo(self.raw_dfs[key])
-
 
     def combine_raw_dfs(self):
         temp = []
