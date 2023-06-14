@@ -1,4 +1,5 @@
 import streamlit as st
+from streamlit.elements.data_editor import _apply_dataframe_edits
 import pandas as pd
 from loantape import LoanTape
 import base64
@@ -52,6 +53,17 @@ def lt_form_callback(params:dict)->None:
     st.session_state['user_stlmt_date'] = params['user_stlmt_date']
     st.session_state['user_prime_rate'] = params['user_prime_rate']/100
 
+
+@st.cache_resource
+def generate_loantape(_cols, raw_data, _params):
+    loan_tape = LoanTape(clean_columns=_cols, data=raw_data, params= _params)
+    loan_tape.format_columns()
+    loan_tape.resolve_columns()
+    return loan_tape
+
+def df_edit_callback(ss_key):
+    st.write(ss_key)
+
 # This code allows users to set the prime rate and projected settlement date
 with st.sidebar:
     with st.form("loan_tape_form"):
@@ -77,22 +89,30 @@ tab1, tab2, tab3 = st.tabs(['Loan Tape', 'Stratifications','Summary'])
 with tab1:
     tab1.subheader('Loan Tape Build')
     files = st.file_uploader("Upload a csv file (columns and data)", type=["csv"], accept_multiple_files=True)
-
+    pkg_counter = 0
     if files is not None:
+        # First check if the submitted button has been pressed -- this means the user is trying to process data
         if submitted:
             prime_rate = st.session_state.user_prime_rate
             raw_data = list()
             for f in files:
                 raw_data.append(pd.read_csv(f))
-
-            loan_tape = LoanTape(clean_columns=_cols, data=raw_data, params= st.session_state)
-            loan_tape.format_columns()
-            loan_tape.resolve_columns()
             
+            loan_tape = generate_loantape(_cols, raw_data, st.session_state)
+            # loan_tape = LoanTape(clean_columns=_cols, data=raw_data, params= st.session_state)
+            # loan_tape.format_columns()
+            # loan_tape.resolve_columns()
+
+
             for key in loan_tape.raw_dfs:
+                pkg_counter += 1
                 if 'unknown' not in key:
+                    # if f"tape_{pkg_counter}" not in st.session_state:
+                    #     st.session_state[f"tape_{pkg_counter}"] = loan_tape.raw_dfs[key]
+
                     test_df = loan_tape.raw_dfs[key]
-                    st.write(test_df)
+
+                    edited_dataframe = st.data_editor(data=test_df,num_rows='dynamic', hide_index=True, key=f"tape_{pkg_counter}", on_change=df_edit_callback, kwargs=dict(ss_key=f"tape_{pkg_counter}") )
 
                     if not test_df.empty:
                     # Create a download button for the test_df
@@ -100,7 +120,15 @@ with tab1:
                         b64 = base64.b64encode(csv.encode()).decode()
                         href = f'<a href="data:file/csv;base64,{b64}" download="test_df.csv">Download Loan Tape</a>'
                         st.markdown(href, unsafe_allow_html=True)
-            st.session_state['loan_tape_form_change'] = False
+            
+
+        # # Next check if there are existing loan_tape_keys in the session state and re-render them. This means the user edited one of their loan tapes
+        if f"tape_{pkg_counter}" in st.session_state:
+            st.write(st.session_state[f"tape_{pkg_counter}"])
+
+        
+
+        st.session_state['loan_tape_form_change'] = False
     else:
         st.write('Please add CSVS of your loantapes to the file drop location in the sidebar')
 
