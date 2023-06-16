@@ -1,0 +1,1 @@
+web: streamlit run app/Package_Analyzer.py

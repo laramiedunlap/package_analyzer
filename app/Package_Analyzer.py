@@ -13,7 +13,7 @@ _cols =  ['Pck / Deal','GP#', 'Borrower Name', 'City', 'State', 'SIC / NAICS', '
 'Note Maturity', 'Int. Paid to Date', 'Loan Spread', 'Loan Rate',
 'Strip Rate', 'Original Balance', 'Current Balance', 'Multiple',
 'Proceeds', 'Term', 'Age', 'Rmos', 'Industry', 'Prepayment Penalty',
-'Term Bucket', 'Industry Bucket', 'Lender', 'Prepayment Notice']
+'Term Bucket', 'Industry Bucket', 'Lender']
 
 # Tell the backend which of the user columns are date columns that will already contain date data
 _date_cols = ['Note Date','Note Maturity']
@@ -53,16 +53,12 @@ def lt_form_callback(params:dict)->None:
     st.session_state['user_stlmt_date'] = params['user_stlmt_date']
     st.session_state['user_prime_rate'] = params['user_prime_rate']/100
 
-
-@st.cache_resource
 def generate_loantape(_cols, raw_data, _params):
+    """This function Contains the loantape generation"""
     loan_tape = LoanTape(clean_columns=_cols, data=raw_data, params= _params)
     loan_tape.format_columns()
     loan_tape.resolve_columns()
     return loan_tape
-
-def df_edit_callback(ss_key):
-    st.write(ss_key)
 
 # This code allows users to set the prime rate and projected settlement date
 with st.sidebar:
@@ -72,17 +68,20 @@ with st.sidebar:
         _prime_rate = round(_prime_rate,3)
         st.write("Set the Projected Settlement Date:")
         todays_date = datetime.date.today()
-        _stlmt_date = st.date_input(label='Default: 50 days from today', value=todays_date+datetime.timedelta(days=50) )
+        _stlmt_date = st.date_input( label='Default: 50 days from today', value=todays_date+datetime.timedelta(days=50) )
 
         mult_choice = st.checkbox(label="Set Static Multiple")
         static_multiple = st.number_input(label='Multiple', value=3.500, step=.1)
         static_multiple = round(static_multiple,3)
-        params = dict(static_mult_chkbox = mult_choice, user_static_multiple=static_multiple, 
+        params = dict(static_mult_chkbox = mult_choice, user_static_multiple=static_multiple,
                       user_stlmt_date=_stlmt_date, user_prime_rate=_prime_rate)
         # Every form must have a submit button.
         submitted = st.form_submit_button("Create LoanTape")
         if submitted:
             lt_form_callback(params)
+    lt_clear_button = st.button("Reset")
+    if lt_clear_button:
+        st.experimental_rerun()
 
 tab1, tab2, tab3 = st.tabs(['Loan Tape', 'Stratifications','Summary'])
 
@@ -97,38 +96,47 @@ with tab1:
             raw_data = list()
             for f in files:
                 raw_data.append(pd.read_csv(f))
-            
             loan_tape = generate_loantape(_cols, raw_data, st.session_state)
-            # loan_tape = LoanTape(clean_columns=_cols, data=raw_data, params= st.session_state)
-            # loan_tape.format_columns()
-            # loan_tape.resolve_columns()
-
-
-            for key in loan_tape.raw_dfs:
-                pkg_counter += 1
-                if 'unknown' not in key:
-                    # if f"tape_{pkg_counter}" not in st.session_state:
-                    #     st.session_state[f"tape_{pkg_counter}"] = loan_tape.raw_dfs[key]
-
-                    test_df = loan_tape.raw_dfs[key]
-
-                    edited_dataframe = st.data_editor(data=test_df,num_rows='dynamic', hide_index=True, key=f"tape_{pkg_counter}", on_change=df_edit_callback, kwargs=dict(ss_key=f"tape_{pkg_counter}") )
-
-                    if not test_df.empty:
-                    # Create a download button for the test_df
-                        csv = test_df.to_csv(index=False)
-                        b64 = base64.b64encode(csv.encode()).decode()
-                        href = f'<a href="data:file/csv;base64,{b64}" download="test_df.csv">Download Loan Tape</a>'
-                        st.markdown(href, unsafe_allow_html=True)
             
-
-        # # Next check if there are existing loan_tape_keys in the session state and re-render them. This means the user edited one of their loan tapes
-        if f"tape_{pkg_counter}" in st.session_state:
-            st.write(st.session_state[f"tape_{pkg_counter}"])
-
+            loan_tape_build_interface = {}
+            lt_build_form = st.form("Loan Tapes")
+            with lt_build_form:
+                edited_data_dict = {}
         
 
+                for key in loan_tape.raw_dfs:
+                    if 'unknown' not in key:
+                        pkg_counter += 1
+
+                        test_df = loan_tape.raw_dfs[key]
+                        # Hotfix that prevents GP numbers from being displayed with commas
+                        test_df['GP#'] = test_df['GP#'].astype(str)
+                        
+                        edited_data = lt_build_form.data_editor(data=test_df, hide_index=True)
+
+                        if not test_df.empty:
+                            edited_data_dict[key] = edited_data
+
+                lt_submit = lt_build_form.form_submit_button(label="Finalize")
+            
+                if lt_submit:
+                    for key, edited_data in edited_data_dict.items():
+                        # Create a download button for the test_df
+                        csv = edited_data.to_csv(index=False)
+                        b64 = base64.b64encode(csv.encode()).decode()
+                        href = f'<a href="data:file/csv;base64,{b64}" download="test_df.csv">Download Loan Tape {pkg_counter}</a>'
+                        st.markdown(href, unsafe_allow_html=True)
+                
+                
+
+
+            
+
+
+                    
+
         st.session_state['loan_tape_form_change'] = False
+
     else:
         st.write('Please add CSVS of your loantapes to the file drop location in the sidebar')
 
