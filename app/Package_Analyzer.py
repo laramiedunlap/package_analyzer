@@ -69,7 +69,7 @@ def list_supported_packages(file_path_str:str)->list:
     pkg_dict = json.load(pkg_file)
     return list(pkg_dict.keys())
 
-path_to_pkgs = 'package_maps/packages.json'
+path_to_pkgs = Path('package_maps/packages.json')
 
 # This code allows users to set the prime rate and projected settlement date
 with st.sidebar:
