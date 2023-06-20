@@ -5,8 +5,13 @@ from loantape import LoanTape
 import base64
 import datetime
 from typing import Optional
+import json
+from pathlib import Path
+
+
 
 st.title("Package Analyzer")
+
 
 # These are the columns for the finished loan tape
 _cols =  ['Pck / Deal','GP#', 'Borrower Name', 'City', 'State', 'SIC / NAICS', 'ADJ', 'Accrual', 'Note Date',
@@ -60,17 +65,30 @@ def generate_loantape(_cols, raw_data, _params):
     loan_tape.resolve_columns()
     return loan_tape
 
+def list_supported_packages(file_path_str:str)->list:
+    pkg_path = Path(file_path_str)
+    pkg_file = open(pkg_path)
+    pkg_dict = json.load(pkg_file)
+    return list(pkg_dict.keys())
+
+path_to_pkgs = 'package_maps/packages.json'
+
 # This code allows users to set the prime rate and projected settlement date
 with st.sidebar:
+    supported_pkgs = list_supported_packages(path_to_pkgs)
+    with st.expander(f'**Currently Supported Counterparties**'):
+        for p in supported_pkgs:
+            st.write(f"*{p}*")
+
     with st.form("loan_tape_form"):
-        st.write("Set the Prime Rate:")
+        st.write("**Set the Prime Rate**:")
         _prime_rate =st.number_input(label='Prime Rate',value=8.000,step=0.05)
         _prime_rate = round(_prime_rate,3)
-        st.write("Set the Projected Settlement Date:")
+        st.write("**Set the Projected Settlement Date**:")
         todays_date = datetime.date.today()
         _stlmt_date = st.date_input( label='Default: 50 days from today', value=todays_date+datetime.timedelta(days=50) )
 
-        mult_choice = st.checkbox(label="Set Static Multiple")
+        mult_choice = st.checkbox(label="**Set Static Multiple?**")
         static_multiple = st.number_input(label='Multiple', value=3.500, step=.1)
         static_multiple = round(static_multiple,3)
         params = dict(static_mult_chkbox = mult_choice, user_static_multiple=static_multiple,
