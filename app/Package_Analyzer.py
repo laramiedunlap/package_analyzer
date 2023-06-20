@@ -127,17 +127,25 @@ with tab1:
                         href = f'<a href="data:file/csv;base64,{b64}" download="test_df.csv">Download Loan Tape {pkg_counter}</a>'
                         st.markdown(href, unsafe_allow_html=True)
                 
-                
+        st.session_state['loan_tape_form_change'] = False
 
+    else:
+        st.write('Please add CSVS of your loantapes to the file drop location in the sidebar')
+
+
+
+with tab2:
+        tab2.subheader('Under Construction')
+
+
+
+with tab3:
+        tab3.subheader('Under Construction')
 
             
 
 
                     
 
-        st.session_state['loan_tape_form_change'] = False
-
-    else:
-        st.write('Please add CSVS of your loantapes to the file drop location in the sidebar')
 
             
