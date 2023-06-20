@@ -9,7 +9,6 @@ import json
 from pathlib import Path
 
 
-
 st.title("Package Analyzer")
 
 
@@ -24,7 +23,6 @@ _cols =  ['Pck / Deal','GP#', 'Borrower Name', 'City', 'State', 'SIC / NAICS', '
 _date_cols = ['Note Date','Note Maturity']
 
 custom_ss_keys =['loan_tape_form_change','static_mult_chkbox','user_static_multiple','user_stlmt_date','user_prime_rate']
-
 
 def init_session_state_keys():
     if 'loan_tape_form_change' not in st.session_state:
