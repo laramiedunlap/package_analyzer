@@ -64,12 +64,12 @@ def generate_loantape(_cols, raw_data, _params):
     return loan_tape
 
 def list_supported_packages(file_path_str:str)->list:
-    pkg_path = Path(file_path_str)
+    pkg_path = Path(__file__).resolve().parent / 'package_maps' / 'packages.json'
     pkg_file = open(pkg_path)
     pkg_dict = json.load(pkg_file)
     return list(pkg_dict.keys())
 
-path_to_pkgs = Path('package_maps/packages.json')
+path_to_pkgs = ('package_maps/packages.json')
 
 # This code allows users to set the prime rate and projected settlement date
 with st.sidebar:
