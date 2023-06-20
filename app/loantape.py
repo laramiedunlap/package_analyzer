@@ -112,16 +112,29 @@ class LoanTape:
         bmo_resolver = column_map.BMO_resolver(in_df, self.correct_columns, self.session_params)
         return bmo_resolver.resolve_columns()
     
+    # def resolve_columns(self):
+    #     for key in self.raw_dfs.keys():
+    #         pkg_type = str(key).split('_')[0]
+    #         match pkg_type:
+    #             case 'FHN':
+    #                 self.raw_dfs[key] = self.resolve_fhn(self.raw_dfs[key])
+    #             case 'RJ':
+    #                 self.raw_dfs[key] = self.resolve_rj(self.raw_dfs[key])
+    #             case 'BMO':
+    #                 self.raw_dfs[key] = self.resolve_bmo(self.raw_dfs[key])
+
+
     def resolve_columns(self):
         for key in self.raw_dfs.keys():
             pkg_type = str(key).split('_')[0]
-            match pkg_type:
-                case 'FHN':
-                    self.raw_dfs[key] = self.resolve_fhn(self.raw_dfs[key])
-                case 'RJ':
-                    self.raw_dfs[key] = self.resolve_rj(self.raw_dfs[key])
-                case 'BMO':
-                    self.raw_dfs[key] = self.resolve_bmo(self.raw_dfs[key])
+            if pkg_type == 'FHN':
+                self.raw_dfs[key] = self.resolve_fhn(self.raw_dfs[key])
+            elif pkg_type == 'RJ':
+                self.raw_dfs[key] = self.resolve_rj(self.raw_dfs[key])
+            elif pkg_type == 'BMO':
+                self.raw_dfs[key] = self.resolve_bmo(self.raw_dfs[key])
+
+
 
     def combine_raw_dfs(self):
         temp = []
