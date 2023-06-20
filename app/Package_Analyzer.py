@@ -99,55 +99,68 @@ with st.sidebar:
     if lt_clear_button:
         st.experimental_rerun()
 
+
 tab1, tab2, tab3 = st.tabs(['Loan Tape', 'Stratifications','Summary'])
+
+
+# This Code is designed to re-render after the finalize button is pressed 
+@st.cache_data
+def convert_loantapes(_user_loan_tape:LoanTape)->dict:
+    """display and cache the user's loan tape data"""
+    user_data_dict = {}
+    pkg_counter = 0
+    for key in _user_loan_tape.raw_dfs:
+        if 'unknown' not in key:
+            pkg_counter += 1 
+            editted_df = _user_loan_tape.raw_dfs[key]
+            user_data_dict[key] = editted_df
+    
+    return user_data_dict, pkg_counter
+
 
 with tab1:
     tab1.subheader('Loan Tape Build')
     files = st.file_uploader("Upload a csv file (columns and data)", type=["csv"], accept_multiple_files=True)
     pkg_counter = 0
     if files is not None:
-        # First check if the submitted button has been pressed -- this means the user is trying to process data
+        # First check if the submitted button has been pressed -- this means the user is trying to process new data, so we'll clear the cache
         if submitted:
-            prime_rate = st.session_state.user_prime_rate
-            raw_data = list()
-            for f in files:
-                raw_data.append(pd.read_csv(f))
-            loan_tape = generate_loantape(_cols, raw_data, st.session_state)
-            
-            loan_tape_build_interface = {}
-            lt_build_form = st.form("Loan Tapes")
-            with lt_build_form:
-                edited_data_dict = {}
+            convert_loantapes.clear()
+
+        prime_rate = st.session_state.user_prime_rate
+        raw_data = list()
+        for f in files:
+            raw_data.append(pd.read_csv(f))
+        loan_tape = generate_loantape(_cols, raw_data, st.session_state)
         
+        lt_build_form = st.form("Loan Tapes")
+        with lt_build_form:
+            # First we'll convert the LoanTape (non-cacheable) data into data we can persist
+            edited_data_dict, pkg_count = convert_loantapes(_user_loan_tape=loan_tape)
 
-                for key in loan_tape.raw_dfs:
-                    if 'unknown' not in key:
-                        pkg_counter += 1
+            test_config =     {'GP#':st.column_config.NumberColumn(format="%d"),
+                            'SIC / NAICS':st.column_config.NumberColumn(format="%d"),
+                            'Loan / Spread': st.column_config.NumberColumn(format="{:.2f}%")
+                                }
+            edited_data_dict = { key: st.data_editor( edited_data_dict[key], hide_index=True, num_rows="dynamic", column_config=test_config ) for key in edited_data_dict.keys() }
+            lt_submit = lt_build_form.form_submit_button(label="Finalize")
 
-                        test_df = loan_tape.raw_dfs[key]
-                        # Hotfix that prevents GP numbers from being displayed with commas
-                        test_df['GP#'] = test_df['GP#'].astype(str)
-                        
-                        edited_data = lt_build_form.data_editor(data=test_df, hide_index=True)
+            # This will cause a reload of the entire page, so whatever happens here needs to be cached.
+            if lt_submit:
+                for key, edited_data in edited_data_dict.items():
+                    # Get the loan package name (if the user has changed it)
+                    pkg_name = edited_data['Pck / Deal'].iloc[0]
+                    # Create a download button for the test_df
+                    csv = edited_data.to_csv(index=False)
+                    b64 = base64.b64encode(csv.encode()).decode()
+                    href = f'<a href="data:file/csv;base64,{b64}" download="{pkg_name}.csv">Download Loan Tape {pkg_name}</a>'
+                    st.markdown(href, unsafe_allow_html=True)
 
-                        if not test_df.empty:
-                            edited_data_dict[key] = edited_data
-
-                lt_submit = lt_build_form.form_submit_button(label="Finalize")
-            
-                if lt_submit:
-                    for key, edited_data in edited_data_dict.items():
-                        # Create a download button for the test_df
-                        csv = edited_data.to_csv(index=False)
-                        b64 = base64.b64encode(csv.encode()).decode()
-                        href = f'<a href="data:file/csv;base64,{b64}" download="test_df.csv">Download Loan Tape {pkg_counter}</a>'
-                        st.markdown(href, unsafe_allow_html=True)
                 
-        st.session_state['loan_tape_form_change'] = False
+    #     st.session_state['loan_tape_form_change'] = False
 
-    else:
-        st.write('Please add CSVS of your loantapes to the file drop location in the sidebar')
-
+    # else:
+    #     st.write('Please add CSVS of your loantapes to the file drop location in the sidebar')
 
 
 with tab2:

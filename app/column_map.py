@@ -295,6 +295,12 @@ class FHN_resolver(ColResolver):
 
 
 class RJ_resolver(ColResolver):
+    @ColResolver.column_method
+    def adj_rates(self):
+        if self.__getattribute__('user_prime_rate'):
+            self.in_df['Loan Rate'] = self.in_df['Loan Spread'] + self.user_prime_rate
+        else:
+            self.in_df['Loan Rate'] = None
     
     @ColResolver.column_method
     def original_balance(self):

@@ -71,6 +71,7 @@
             "Curr COOF Balance":"Current Balance",
             "COOF Rate Prior 4/1 Reset":"",
             "Final COOF Rate":"Strip Rate",
+            "COOF Rate":"Strip Rate",
             "Current Interest To Date":"",
             "Reset M/Q":"ADJ",
             "Day Count":"Accrual",
