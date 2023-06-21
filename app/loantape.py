@@ -118,6 +118,7 @@ class LoanTape:
         bmo_resolver = column_map.BMO_resolver(in_df, self.correct_columns, self.session_params)
         return bmo_resolver.resolve_columns()
     
+    # NOTE -- For some reason streamlit has python 3.9 which doesn't support th
     # def resolve_columns(self):
     #     for key in self.raw_dfs.keys():
     #         pkg_type = str(key).split('_')[0]
