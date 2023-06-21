@@ -62,7 +62,7 @@ class LoanTape:
 
     def load_format_packges(self):
         """parse the raw loan data by using the available packages"""
-        pkg_path = Path('package_maps/packages.json')
+        pkg_path = Path(__file__).resolve().parent / 'package_maps' / 'packages.json'
         pkg_file = open(pkg_path)
         format_opts = json.load(pkg_file)
         return format_opts
