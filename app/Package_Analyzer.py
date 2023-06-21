@@ -126,41 +126,41 @@ with tab1:
         # First check if the submitted button has been pressed -- this means the user is trying to process new data, so we'll clear the cache
         if submitted:
             convert_loantapes.clear()
+            st.session_state['submitted_button_pressed'] = True
 
-        prime_rate = st.session_state.user_prime_rate
-        raw_data = list()
-        for f in files:
-            raw_data.append(pd.read_csv(f))
-        loan_tape = generate_loantape(_cols, raw_data, st.session_state)
-        
-        lt_build_form = st.form("Loan Tapes")
-        with lt_build_form:
-            # First we'll convert the LoanTape (non-cacheable) data into data we can persist
-            edited_data_dict, pkg_count = convert_loantapes(_user_loan_tape=loan_tape)
+        if 'submitted_button_pressed' in st.session_state and st.session_state['submitted_button_pressed']:
+            prime_rate = st.session_state.user_prime_rate
+            raw_data = list()
+            for f in files:
+                raw_data.append(pd.read_csv(f))
+            loan_tape = generate_loantape(_cols, raw_data, st.session_state)
+            
+            lt_build_form = st.form("Loan Tapes")
+            with lt_build_form:
+                # First we'll convert the LoanTape (non-cacheable) data into data we can persist
+                edited_data_dict, pkg_count = convert_loantapes(_user_loan_tape=loan_tape)
 
-            test_config =     {'GP#':st.column_config.NumberColumn(format="%d"),
-                            'SIC / NAICS':st.column_config.NumberColumn(format="%d"),
-                            'Loan / Spread': st.column_config.NumberColumn(format="{:.2f}%")
-                                }
-            edited_data_dict = { key: st.data_editor( edited_data_dict[key], hide_index=True, num_rows="dynamic", column_config=test_config ) for key in edited_data_dict.keys() }
-            lt_submit = lt_build_form.form_submit_button(label="Finalize")
+                test_config =     {'GP#':st.column_config.NumberColumn(format="%d"),
+                                'SIC / NAICS':st.column_config.NumberColumn(format="%d"),
+                                'Loan / Spread': st.column_config.NumberColumn(format="{:.2f}%")
+                                    }
+                edited_data_dict = { key: st.data_editor( edited_data_dict[key], hide_index=True, num_rows="dynamic", column_config=test_config ) for key in edited_data_dict.keys() }
+                lt_submit = lt_build_form.form_submit_button(label="Finalize")
 
-            # This will cause a reload of the entire page, so whatever happens here needs to be cached.
-            if lt_submit:
-                for key, edited_data in edited_data_dict.items():
-                    # Get the loan package name (if the user has changed it)
-                    pkg_name = edited_data['Pck / Deal'].iloc[0]
-                    # Create a download button for the test_df
-                    csv = edited_data.to_csv(index=False)
-                    b64 = base64.b64encode(csv.encode()).decode()
-                    href = f'<a href="data:file/csv;base64,{b64}" download="{pkg_name}.csv">Download Loan Tape {pkg_name}</a>'
-                    st.markdown(href, unsafe_allow_html=True)
+                # This will cause a reload of the entire page, so whatever happens here needs to be cached.
+                if lt_submit:
+                    for key, edited_data in edited_data_dict.items():
+                        # Get the loan package name (if the user has changed it)
+                        pkg_name = edited_data['Pck / Deal'].iloc[0]
+                        # Create a download button for the test_df
+                        csv = edited_data.to_csv(index=False)
+                        b64 = base64.b64encode(csv.encode()).decode()
+                        href = f'<a href="data:file/csv;base64,{b64}" download="{pkg_name}.csv">Download Loan Tape {pkg_name}</a>'
+                        st.markdown(href, unsafe_allow_html=True)
 
-                
-    #     st.session_state['loan_tape_form_change'] = False
 
-    # else:
-    #     st.write('Please add CSVS of your loantapes to the file drop location in the sidebar')
+    else:
+        st.write('Please add CSVS of your loantapes to the file drop location in the sidebar')
 
 
 with tab2:
