@@ -7,9 +7,13 @@ import datetime
 from typing import Optional
 import json
 from pathlib import Path
+import sys
 
+py_version = sys.version
 
 st.title("Package Analyzer")
+
+st.subheader(f"Python version: {py_version}")
 
 
 # These are the columns for the finished loan tape
@@ -158,7 +162,7 @@ with tab1:
                         href = f'<a href="data:file/csv;base64,{b64}" download="{pkg_name}.csv">Download Loan Tape {pkg_name}</a>'
                         st.markdown(href, unsafe_allow_html=True)
 
-    
+
     else:
         st.write('Please add CSVS of your loantapes to the file drop location in the sidebar')
 
