@@ -13,7 +13,6 @@ py_version = sys.version
 
 st.title("Package Analyzer")
 
-st.subheader(f"Python version: {py_version}")
 
 
 # These are the columns for the finished loan tape
@@ -77,6 +76,7 @@ path_to_pkgs = ('package_maps/packages.json')
 
 # This code allows users to set the prime rate and projected settlement date
 with st.sidebar:
+    st.subheader(f"Python version: {py_version[0:4]}")
     supported_pkgs = list_supported_packages(path_to_pkgs)
     with st.expander(f'**Currently Supported Counterparties**'):
         for p in supported_pkgs:
@@ -99,9 +99,10 @@ with st.sidebar:
         submitted = st.form_submit_button("Create LoanTape")
         if submitted:
             lt_form_callback(params)
-    lt_clear_button = st.button("Reset")
-    if lt_clear_button:
-        st.experimental_rerun()
+
+lt_clear_button = st.button("Reset")
+if lt_clear_button:        
+    st.experimental_rerun()
 
 
 tab1, tab2, tab3 = st.tabs(['Loan Tape', 'Stratifications','Summary'])
@@ -139,28 +140,62 @@ with tab1:
                 raw_data.append(pd.read_csv(f))
             loan_tape = generate_loantape(_cols, raw_data, st.session_state)
             
-            lt_build_form = st.form("Loan Tapes")
+            lt_build_form_container = st.empty()
+            lt_build_form = lt_build_form_container.form("Loan Tapes", clear_on_submit=True)
             with lt_build_form:
-                # First we'll convert the LoanTape (non-cacheable) data into data we can persist
-                edited_data_dict, pkg_count = convert_loantapes(_user_loan_tape=loan_tape)
 
-                test_config =     {'GP#':st.column_config.NumberColumn(format="%d"),
+                test_config =   { 'GP#':st.column_config.NumberColumn(format="%d"),
                                 'SIC / NAICS':st.column_config.NumberColumn(format="%d"),
                                 'Loan / Spread': st.column_config.NumberColumn(format="{:.2f}%")
                                     }
-                edited_data_dict = { key: st.data_editor( edited_data_dict[key], hide_index=True, num_rows="dynamic", column_config=test_config ) for key in edited_data_dict.keys() }
-                lt_submit = lt_build_form.form_submit_button(label="Finalize")
+                
+                # Convert the LoanTape (non-cacheable) data into data we can persist
+                # This data has been processed via python - now the user has an opportunity to edit 
+                processed_data_dict, pkg_count = convert_loantapes(_user_loan_tape=loan_tape)
 
-                # This will cause a reload of the entire page, so whatever happens here needs to be cached.
-                if lt_submit:
-                    for key, edited_data in edited_data_dict.items():
-                        # Get the loan package name (if the user has changed it)
-                        pkg_name = edited_data['Pck / Deal'].iloc[0]
-                        # Create a download button for the test_df
-                        csv = edited_data.to_csv(index=False)
-                        b64 = base64.b64encode(csv.encode()).decode()
-                        href = f'<a href="data:file/csv;base64,{b64}" download="{pkg_name}.csv">Download Loan Tape {pkg_name}</a>'
-                        st.markdown(href, unsafe_allow_html=True)
+
+
+                edited_data_dict = { key: st.data_editor( processed_data_dict[key], column_config=test_config, hide_index=False, num_rows="dynamic" ) for key in processed_data_dict.keys() }
+                
+                # Next we'll create a function to highlight cells with missing fields to the user, and then a function to show the user where there are issues
+                def highlight_cells(val)->str:
+                    color = 'yellow' if pd.isna(val) else ''
+                    return 'background-color: {}'.format(color)
+                
+
+                def find_loantape_issues(processed_data:dict)->None:
+                    """Render Streamlit Components to direct the user where there could be errors in the data sent from a lender"""
+                    check_columns = ['GP#', 'Note Date', 'Note Maturity', 'Strip Rate', 'Current Balance']
+                    for pkg_id in processed_data.keys():
+                        df = processed_data[pkg_id]
+                        idx_list = []
+                        for c in check_columns:
+                            if not df[df[c].isna()].empty:
+                                idx_list += df[df[c].isna()].index.to_list()
+                        problems_to_display = df[df.index.isin(idx_list)]
+                        if not problems_to_display.empty:
+                            st.write(f"{pkg_id} could have errors on these rows:")
+                            st.write(problems_to_display.style.applymap(highlight_cells))
+                    return None
+                
+                find_loantape_issues(processed_data=processed_data_dict)
+
+
+                lt_submit = lt_build_form.form_submit_button(label="Finalize", help="To rebuild or restart the app, click the tool bar in the top right and select:\n `Clear cache` then `Rerun` ")
+            
+            if lt_submit:
+                for key, edited_data in edited_data_dict.items():
+                    lt_build_form_container.empty()
+                    # Get the loan package name (if the user has changed it)
+                    pkg_name = edited_data['Pck / Deal'].iloc[0]
+                    # Create a download button for each loantape
+                    csv = edited_data.to_csv(index=False)
+                    b64 = base64.b64encode(csv.encode()).decode()
+                    href = f'<a href="data:file/csv;base64,{b64}" download="{pkg_name}.csv">Download Loan Tape {pkg_name}</a>'
+                    st.markdown(href, unsafe_allow_html=True)
+                    
+
+
 
 
     else:

@@ -268,6 +268,11 @@ class ColResolver(ABC):
 class FHN_resolver(ColResolver):
 
     @ColResolver.column_method
+    def gp_check(self):
+        self.in_df['GP#'] = self.in_df['GP#'].astype(str)
+        self.in_df['GP#'] = self.in_df['GP#'].str.replace(' ','')
+
+    @ColResolver.column_method
     def geo_split(self):
         """For FHN loan tapes, split the city and state out into two columns named `City` and `State`"""
         self.in_df[['City','State']] = self.in_df['func_geosplit'].str.extract(r'^(.*),\s([A-Z]{2})+')
@@ -289,16 +294,15 @@ class FHN_resolver(ColResolver):
     def original_balance(self):
         self.in_df['Original Balance'] = self.in_df['Current Balance']
 
-    # @ColResolver.column_method
-    # def note_date(self):
-    #     self.in_df = self.in_df[self.in_df['Note Date'].notna()]
-
 
 class RJ_resolver(ColResolver):
     @ColResolver.column_method
     def adj_rates(self):
         if self.__getattribute__('user_prime_rate'):
-            self.in_df['Loan Rate'] = self.in_df['Loan Spread'] + self.user_prime_rate
+            # Find instances where RJ has recorded "FXD" or some other bullshit inside the Loan Spread column
+            # Here I'm going to estimate the loan rate by adding 1.69% servicing and the Strip Rate to the Prime Rate
+            self.in_df.loc[self.in_df['Loan Spread'].str.isalnum(), 'Loan Spread'] = float(self.user_prime_rate) + self.in_df['Strip Rate'] + .0169
+            self.in_df['Loan Rate'] = self.in_df['Loan Spread'].astype(float) + float(self.user_prime_rate)
         else:
             self.in_df['Loan Rate'] = None
     
