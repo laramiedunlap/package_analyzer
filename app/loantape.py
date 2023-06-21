@@ -28,6 +28,12 @@ def pkg_increment(temp_dict:dict, curr_key:str):
         next_elem = key_list[key_list.index(curr_key)+1]
         if next_elem.isdigit():
             return f"{curr_key}_{int(next_elem)+1}"
+        
+def get_NAICS_path():
+    """returns the path for NAICS data"""
+    naics_path = Path(__file__).resolve().parent / 'package_maps' / 'NAICS_2017.csv'
+    return naics_path
+
 
 class LoanTape:
     df: pd.DataFrame
@@ -68,7 +74,7 @@ class LoanTape:
         self.df = pd.DataFrame(columns=clean_columns)
         self.raw_dfs = {f'unknown_{i}': df for i, df in enumerate(data)}
         self.norm_raw_cols()
-        naics_tbl = pd.read_csv('package_maps/NAICS_2017.csv')
+        naics_tbl = pd.read_csv( get_NAICS_path() )
         self.naics = dict(naics_tbl.values)
         self.format_packages = self.load_format_packges()
 
