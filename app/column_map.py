@@ -141,8 +141,6 @@ class ColResolver(ABC):
         else:
             # This is technically an error that we may want to display on the front end or handle somehow (it would be a very unique corner case)
             print("No int to date")
-
-    
     
     def term(self)->None:
         self.in_df['Term'] = self.in_df.apply(lambda row: month_diff(row['Note Date'], row['Note Maturity']), axis=1)
@@ -246,9 +244,6 @@ class ColResolver(ABC):
 
             missing_note_date = missing_note_date[self.in_df.columns]
             
-            
-            # self.in_df = self.in_df.loc[~self.in_df.index.duplicated(keep='first')]
-            # missing_note_date = missing_note_date.loc[~missing_note_date.index.duplicated(keep='first')]
             try:
                 self.in_df = pd.concat([self.in_df,missing_note_date], axis= 0)
             except:
@@ -296,12 +291,14 @@ class FHN_resolver(ColResolver):
 
 
 class RJ_resolver(ColResolver):
+    
     @ColResolver.column_method
     def adj_rates(self):
         if self.__getattribute__('user_prime_rate'):
             # Find instances where RJ has recorded "FXD" or some other bullshit inside the Loan Spread column
             # Here I'm going to estimate the loan rate by adding 1.69% servicing and the Strip Rate to the Prime Rate
-            self.in_df.loc[self.in_df['Loan Spread'].str.isalnum(), 'Loan Spread'] = float(self.user_prime_rate) + self.in_df['Strip Rate'] + .0169
+            self.in_df['Loan Spread'] = self.in_df['Loan Spread'].astype(str)
+            self.in_df.loc[self.in_df['Loan Spread'].str.isalnum(), 'Loan Spread'] = float(self.user_prime_rate) + self.in_df['Strip Rate'].astype(float) + .0169
             self.in_df['Loan Rate'] = self.in_df['Loan Spread'].astype(float) + float(self.user_prime_rate)
         else:
             self.in_df['Loan Rate'] = None

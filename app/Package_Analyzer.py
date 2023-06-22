@@ -100,9 +100,6 @@ with st.sidebar:
         if submitted:
             lt_form_callback(params)
 
-lt_clear_button = st.button("Reset")
-if lt_clear_button:        
-    st.experimental_rerun()
 
 
 tab1, tab2, tab3 = st.tabs(['Loan Tape', 'Stratifications','Summary'])
@@ -211,6 +208,9 @@ with tab3:
         tab3.subheader('Under Construction')
 
             
+lt_clear_button = st.button("Reset")
+if lt_clear_button:        
+    st.experimental_rerun()
 
 
                     
