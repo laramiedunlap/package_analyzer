@@ -105,7 +105,7 @@ class LoanTape:
         self.raw_dfs.update(temp)
         return None
 
-
+    # --NOTE-- the following functions are where you add in column resolvers to the loan tape
     def resolve_fhn(self, in_df):
         fhn_resolver = column_map.FHN_resolver(in_df, self.correct_columns, self.session_params)
         return fhn_resolver.resolve_columns()
@@ -118,8 +118,9 @@ class LoanTape:
         bmo_resolver = column_map.BMO_resolver(in_df, self.correct_columns, self.session_params)
         return bmo_resolver.resolve_columns()
     
-    # NOTE -- For some reason streamlit has python 3.9 which doesn't support th
+    # NOTE -- this function will not work in some older versions of python
     def resolve_columns(self):
+        """add a case with the package name from the json file and the resolve_<name>"""
         for key in self.raw_dfs.keys():
             pkg_type = str(key).split('_')[0]
             match pkg_type:
@@ -129,18 +130,6 @@ class LoanTape:
                     self.raw_dfs[key] = self.resolve_rj(self.raw_dfs[key])
                 case 'BMO':
                     self.raw_dfs[key] = self.resolve_bmo(self.raw_dfs[key])
-
-
-    # def resolve_columns(self):
-    #     for key in self.raw_dfs.keys():
-    #         pkg_type = str(key).split('_')[0]
-    #         if pkg_type == 'FHN':
-    #             self.raw_dfs[key] = self.resolve_fhn(self.raw_dfs[key])
-    #         elif pkg_type == 'RJ':
-    #             self.raw_dfs[key] = self.resolve_rj(self.raw_dfs[key])
-    #         elif pkg_type == 'BMO':
-    #             self.raw_dfs[key] = self.resolve_bmo(self.raw_dfs[key])
-
 
 
     def combine_raw_dfs(self):
