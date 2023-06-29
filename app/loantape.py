@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 import os
 import column_map
+from typing import Optional
 
 
 # NOTE -- These are helper functions for the LoanTape Class -- I felt they shouldn't be included inside the class
@@ -120,7 +121,7 @@ class LoanTape:
     
     # NOTE -- this function will not work in some older versions of python
     def resolve_columns(self):
-        """add a case with the package name from the json file and the resolve_<name>"""
+        """add a case with the package name from the json file and the resolve_<name> method like below"""
         for key in self.raw_dfs.keys():
             pkg_type = str(key).split('_')[0]
             match pkg_type:
@@ -131,19 +132,24 @@ class LoanTape:
                 case 'BMO':
                     self.raw_dfs[key] = self.resolve_bmo(self.raw_dfs[key])
 
-
-    def combine_raw_dfs(self):
-        temp = []
-        # Combine the dfs with formatted columns -- excluding the originals (non-destructive)
-        for key in [key for key in self.raw_dfs.keys() if 'unknown' not in key]:
-            df = self.raw_dfs[key]
-            existing_cols = [c for c in df.columns if c != ""]
-            temp.append(df[existing_cols])
-        temp = pd.concat(temp, ignore_index=True)
-        temp = temp[temp['GP#'].notna()]
-        self.df = temp
-        return self.df
-
+    # This function compines the packages from different lenders into one dataframe stored in the 
+    # `self.df` variable. 
+    def combine_raw_dfs(self, edited_data: Optional[pd.DataFrame] = None)->pd.DataFrame:
+        if edited_data is not None:
+            self.df = edited_data[edited_data['GP#'].notna()]
+            return self.df
+        else:
+            temp = []
+            # Combine the dfs with formatted columns -- excluding the originals (non-destructive)
+            for key in [key for key in self.raw_dfs.keys() if 'unknown' not in key]:
+                df = self.raw_dfs[key]
+                existing_cols = [c for c in df.columns if c != ""]
+                temp.append(df[existing_cols])
+            temp = pd.concat(temp, ignore_index=True)
+            temp = temp[temp['GP#'].notna()]
+            self.df = temp
+            return self.df
+        
 
         
         

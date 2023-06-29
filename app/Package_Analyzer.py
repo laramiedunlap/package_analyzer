@@ -1,10 +1,10 @@
 import streamlit as st
-from streamlit.elements.data_editor import _apply_dataframe_edits
 import pandas as pd
 from loantape import LoanTape
 import base64
 import datetime
 from typing import Optional
+from collections import OrderedDict
 import json
 from pathlib import Path
 import sys
@@ -145,7 +145,7 @@ with tab1:
                 # This data has been processed via python - now the user has an opportunity to edit 
                 processed_data_dict, pkg_count = convert_loantapes(_user_loan_tape=loan_tape)
 
-                edited_data_dict = { key: st.data_editor( processed_data_dict[key], column_config=test_config, hide_index=False, num_rows="dynamic" ) for key in processed_data_dict.keys() }
+                edited_data_dict = OrderedDict( {key: st.data_editor( processed_data_dict[key], column_config=test_config, hide_index=False, num_rows="dynamic" ) for key in processed_data_dict.keys() })
                 
                 # Next we'll create a function to highlight cells with missing fields to the user, and then a function to show the user where there are issues
                 def highlight_cells(val)->str:
@@ -173,6 +173,7 @@ with tab1:
                 lt_submit = lt_build_form.form_submit_button(label="Finalize", help="To rebuild or restart the app, click the tool bar in the top right and select:\n `Clear cache` then `Rerun` ")
             
             if lt_submit:
+                
                 for key, edited_data in edited_data_dict.items():
                     # here we remove the form from the Loan Tape tab
                     lt_build_form_container.empty()
@@ -183,19 +184,20 @@ with tab1:
                     b64 = base64.b64encode(csv.encode()).decode()
                     href = f'<a href="data:file/csv;base64,{b64}" download="{pkg_name}.csv">Download Loan Tape {pkg_name}</a>'
                     st.markdown(href, unsafe_allow_html=True)
-                
+
+
                     
+                with tab2:
+                        st.write(pd.concat([df for df in edited_data_dict.values()], axis=0))
+
+                with tab3:
+                        tab3.subheader('Under Construction')
+                            
+                lt_clear_button = st.button("Reset")
+                if lt_clear_button:        
+                    st.experimental_rerun()
+                            
     else:
         st.write('Please add CSVS of your loantapes to the file drop location in the sidebar')
 
 
-with tab2:
-        st.write(pd.concat([df for df in edited_data_dict.values()], axis=0))
-
-with tab3:
-        tab3.subheader('Under Construction')
-            
-lt_clear_button = st.button("Reset")
-if lt_clear_button:        
-    st.experimental_rerun()
-            
