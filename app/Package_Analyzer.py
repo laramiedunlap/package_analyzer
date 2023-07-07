@@ -105,7 +105,7 @@ tab1, tab2, tab3 = st.tabs(['Loan Tape', 'Stratifications','Summary'])
 @st.cache_data
 def convert_loantapes(_user_loan_tape:LoanTape)->dict:
     """display and cache the user's loan tape data"""
-    user_data_dict = {}
+    user_data_dict = OrderedDict()
     pkg_counter = 0
     for key in _user_loan_tape.raw_dfs:
         if 'unknown' not in key:
@@ -114,6 +114,27 @@ def convert_loantapes(_user_loan_tape:LoanTape)->dict:
             user_data_dict[key] = editted_df
     
     return user_data_dict, pkg_counter
+
+def write_unknown_number_of_items(arr_in:list, prefix:Optional[str]=None, suffix:Optional[str]=None, fifo: Optional[int]=0):
+    """renders an unknown number of st.writes; add optional text before or after the thing using the optional kwargs."""
+    arr = [i for i in arr_in]
+    if fifo != 0: fifo = -1
+    while len(arr)>0:   
+        thing = arr.pop(fifo)
+        if not prefix:
+            if not suffix:
+                yield st.write(f"{thing}")
+            else:
+                yield st.write(f"{thing}{suffix}")
+        else:
+            if suffix:
+                yield st.write(f"{prefix}{thing}{suffix}")
+            else:
+                yield st.write(f"{prefix}{thing}")
+
+def generate_linked_text_inputs(num_text_inputs:int, )-> None:
+    """The plan here is to allow the user to rename the packages after generating the loantape, but I have to figure out how to render this before the form with the edit_dfs are made"""
+    pass
 
 with tab1:
     tab1.subheader('Loan Tape Build')
@@ -131,26 +152,55 @@ with tab1:
             for f in files:
                 raw_data.append(pd.read_csv(f))
             loan_tape = generate_loantape(_cols, raw_data, st.session_state)
+            # NOTE --> Processed_data_dict is an ORDERED_DICT, so you can access items in the order they were added
+            processed_data_dict, pkg_count = convert_loantapes(_user_loan_tape=loan_tape)
+
+            # RENAMING MODULE
+            
+            st.write("Give packages a unique name:")
+            prebuild_container = st.empty()
+            
+            prebuild_container = st.container()
+            with prebuild_container:
+                curr_names = list(processed_data_dict.keys())
+                raw_name_generator = write_unknown_number_of_items(curr_names)
+                writing_job = [i for i in raw_name_generator]
+                                
+                names = [st.text_input(f"enter name for {curr_names[i]}:", key=f"{curr_names[i]}-textinput") for i in list( range( len(writing_job) ) )]
+
+                rename_button= st.button('Rename Packages')
+
+                if rename_button:
+                    for k , v in st.session_state.items():
+                        if 'textinput' in k:
+                            data_dict_key = k.split('-')[0]
+                            new_pkg_name = st.session_state[k]
+                            processed_data_dict[data_dict_key]['Pck / Deal']  = new_pkg_name
+                
+                st.write('Previews:')
+                previews = [st.dataframe(df.head(2)) for df in processed_data_dict.values()]
+
+            
+
             # Here we build another form inside the Loan Tape tab
             lt_build_form_container = st.empty()
             lt_build_form = lt_build_form_container.form("Loan Tapes", clear_on_submit=True)
             with lt_build_form:
 
-                test_config =   { 'GP#':st.column_config.NumberColumn(format="%d"),
+                col_config =   { 'GP#':st.column_config.NumberColumn(format="%d"),
                                 'SIC / NAICS':st.column_config.NumberColumn(format="%d"),
                                 'Loan / Spread': st.column_config.NumberColumn(format="{:.2f}%")
                                     }
                 
                 # Convert the LoanTape (non-cacheable) data into data we can persist
                 # This data has been processed via python - now the user has an opportunity to edit 
-                processed_data_dict, pkg_count = convert_loantapes(_user_loan_tape=loan_tape)
-
-                edited_data_dict = OrderedDict( {key: st.data_editor( processed_data_dict[key], column_config=test_config, hide_index=False, num_rows="dynamic" ) for key in processed_data_dict.keys() })
+                edited_data_dict = OrderedDict( {key: st.data_editor( processed_data_dict[key], column_config=col_config, hide_index=False, num_rows="dynamic" ) for key in processed_data_dict.keys() })
                 
                 # Next we'll create a function to highlight cells with missing fields to the user, and then a function to show the user where there are issues
                 def highlight_cells(val)->str:
                     color = 'yellow' if pd.isna(val) else ''
                     return 'background-color: {}'.format(color)
+                
 
                 def find_loantape_issues(processed_data:dict)->None:
                     """Render Streamlit Components to direct the user where there could be errors in the data sent from a lender"""
@@ -167,6 +217,7 @@ with tab1:
                             st.write(problems_to_display.style.applymap(highlight_cells))
                     return None
                 
+                
                 find_loantape_issues(processed_data=processed_data_dict)
 
 
@@ -174,16 +225,20 @@ with tab1:
             
             if lt_submit:
                 
+                # here we remove the form from the Loan Tape tab
+                lt_build_form_container.empty()
+
                 for key, edited_data in edited_data_dict.items():
-                    # here we remove the form from the Loan Tape tab
-                    lt_build_form_container.empty()
                     # Get the loan package name (if the user has changed it)
                     pkg_name = edited_data['Pck / Deal'].iloc[0]
-                    # Create a download button for each loantape
+                    # Create a download button for each individual loantape
                     csv = edited_data.to_csv(index=False)
                     b64 = base64.b64encode(csv.encode()).decode()
                     href = f'<a href="data:file/csv;base64,{b64}" download="{pkg_name}.csv">Download Loan Tape {pkg_name}</a>'
                     st.markdown(href, unsafe_allow_html=True)
+                
+                loan_tape.combine_raw_dfs()
+
 
 
                     

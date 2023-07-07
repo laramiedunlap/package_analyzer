@@ -133,7 +133,7 @@ class LoanTape:
                     self.raw_dfs[key] = self.resolve_bmo(self.raw_dfs[key])
 
     # This function compines the packages from different lenders into one dataframe stored in the 
-    # `self.df` variable. 
+    # `self.df` variable. It will also allow the front end to do pass the combined dataframe if the user has edited it.
     def combine_raw_dfs(self, edited_data: Optional[pd.DataFrame] = None)->pd.DataFrame:
         if edited_data is not None:
             self.df = edited_data[edited_data['GP#'].notna()]

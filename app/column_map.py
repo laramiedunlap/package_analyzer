@@ -185,7 +185,7 @@ class ColResolver(ABC):
     def industry_bucket(self)->None:
         codes = [721110,447110,722511,811192,624410]
         self.in_df['Industry Bucket'] = 0
-        self.in_df.loc[self.in_df['Industry Bucket'].isin(codes), 'Industry Bucket'] = 1
+        self.in_df.loc[self.in_df['SIC / NAICS'].isin(codes), 'Industry Bucket'] = 1
 
     def run_col_methods(self)->None:
         """Run all the column methods"""
