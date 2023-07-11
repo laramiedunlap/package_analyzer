@@ -145,9 +145,9 @@ class LoanTape:
                 df = self.raw_dfs[key]
                 existing_cols = [c for c in df.columns if c != ""]
                 temp.append(df[existing_cols])
-            temp = pd.concat(temp, ignore_index=True)
-            temp = temp[temp['GP#'].notna()]
-            self.df = temp
+            temp_df = pd.concat(temp, ignore_index=True)
+            temp_df = temp_df[temp_df['GP#'].notna()]
+            self.df = temp_df
             return self.df
         
 

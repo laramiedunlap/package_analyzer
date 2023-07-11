@@ -38,6 +38,8 @@ def init_session_state_keys():
         st.session_state['user_prime_rate'] = None
     if 'user_date_cols' not in st.session_state:
         st.session_state['user_date_cols'] = _date_cols
+    if 'submitted' not in st.session_state:
+        st.session_state['submitted'] = False
 
 init_session_state_keys()
 
@@ -64,18 +66,17 @@ def generate_loantape(_cols, raw_data, _params):
     loan_tape.resolve_columns()
     return loan_tape
 
-def list_supported_packages(file_path_str:str)->list:
+def list_supported_packages()->list:
+    """Return a list of supported counterparties"""
     pkg_path = Path(__file__).resolve().parent / 'package_maps' / 'packages.json'
     pkg_file = open(pkg_path)
     pkg_dict = json.load(pkg_file)
     return list(pkg_dict.keys())
 
-path_to_pkgs = ('package_maps/packages.json')
-
 # This code allows users to set the prime rate and projected settlement date
 with st.sidebar:
     st.subheader(f"Python version: {py_version[0:4]}")
-    supported_pkgs = list_supported_packages(path_to_pkgs)
+    supported_pkgs = list_supported_packages()
     with st.expander(f'**Currently Supported Counterparties**'):
         for p in supported_pkgs:
             st.write(f"*{p}*")
@@ -156,31 +157,29 @@ with tab1:
             processed_data_dict, pkg_count = convert_loantapes(_user_loan_tape=loan_tape)
 
             # RENAMING MODULE
-            
-            st.write("Give packages a unique name:")
             prebuild_container = st.empty()
-            
             prebuild_container = st.container()
+
             with prebuild_container:
+                st.write("Current packages identified:")
                 curr_names = list(processed_data_dict.keys())
                 raw_name_generator = write_unknown_number_of_items(curr_names)
+                st.write('Previews:')
+                previews = [st.dataframe(df.head(2)) for df in processed_data_dict.values()]
                 writing_job = [i for i in raw_name_generator]
                                 
-                names = [st.text_input(f"enter name for {curr_names[i]}:", key=f"{curr_names[i]}-textinput") for i in list( range( len(writing_job) ) )]
+                names = [st.text_input(f"enter name for {curr_names[i]}:", key=f"{curr_names[i]}-pkg_name_input") for i in list( range( len(writing_job) ) )]
 
-                rename_button= st.button('Rename Packages')
+                rename_button= st.button('Rename Packages',key='rename_button')
 
                 if rename_button:
                     for k , v in st.session_state.items():
-                        if 'textinput' in k:
+                        if 'pkg_name_input' in k:
                             data_dict_key = k.split('-')[0]
                             new_pkg_name = st.session_state[k]
                             processed_data_dict[data_dict_key]['Pck / Deal']  = new_pkg_name
-                
-                st.write('Previews:')
-                previews = [st.dataframe(df.head(2)) for df in processed_data_dict.values()]
+                    
 
-            
 
             # Here we build another form inside the Loan Tape tab
             lt_build_form_container = st.empty()
@@ -213,7 +212,7 @@ with tab1:
                                 idx_list += df[df[c].isna()].index.to_list()
                         problems_to_display = df[df.index.isin(idx_list)]
                         if not problems_to_display.empty:
-                            st.write(f"{pkg_id} could have errors on these rows:")
+                            st.write(f"**{processed_data[pkg_id]['Pck / Deal'][0]}**  could have errors on these rows:")
                             st.write(problems_to_display.style.applymap(highlight_cells))
                     return None
                 
@@ -224,9 +223,15 @@ with tab1:
                 lt_submit = lt_build_form.form_submit_button(label="Finalize", help="To rebuild or restart the app, click the tool bar in the top right and select:\n `Clear cache` then `Rerun` ")
             
             if lt_submit:
+
                 
-                # here we remove the form from the Loan Tape tab
-                lt_build_form_container.empty()
+
+
+                submitted_loan_tape = pd.concat([edited_data for edited_data in edited_data_dict.values()],axis=0)
+
+                st.session_state['submitted_df'] = submitted_loan_tape
+
+                st.write(submitted_loan_tape)
 
                 for key, edited_data in edited_data_dict.items():
                     # Get the loan package name (if the user has changed it)
@@ -237,7 +242,10 @@ with tab1:
                     href = f'<a href="data:file/csv;base64,{b64}" download="{pkg_name}.csv">Download Loan Tape {pkg_name}</a>'
                     st.markdown(href, unsafe_allow_html=True)
                 
-                loan_tape.combine_raw_dfs()
+                # here we remove the form from the Loan Tape tab
+                lt_build_form_container.empty()
+
+
 
 
 
