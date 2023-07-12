@@ -5,8 +5,9 @@ ___
 1. For each counterparty excel format, add column mapping values to packages.json (outer key== name/abbr, inner key-val pairs are column mappings from theirs to ours)
 2. Add `counterparty_abbr`_resolver child class to column_map.py, add any custom logic that needs to be performed on a column inside the class with a `ColResolver.column_method` decorater. See column_map.py for examples.
 3. Write instantiation and orchestration into loantape.py file
-4. If counterparty changes or updates clolumn headers, simply add the new key-value pairs to the packages.json file (do not delete old mapping)
-5. 
+4. If counterparty changes or updates column headers, simply add the new key-value pairs to the packages.json file (do not delete old mapping)
+
+
 ## Version 1.0.1 Additions
 ___
 - ~~Paginate app, write up to date col resolves for the existing packages~~
@@ -30,3 +31,15 @@ ___
 - Incorporate AWS 
 - Add excel support so users don't have to create a csv
 
+
+### Context notes and dynamically replacing page content:
+    import streamlit as st
+    page = st.empty()
+    with page:
+        content = st.container()
+        content.write('Hello!')
+        x = content.button('Goobye?')
+    if x:
+        page.empty()
+
+This code will create an empty one element container called page, the with that page add a content container. Then with that content container, it will write hello, add a button, and when the button is pressed -- remove all the pages content.
