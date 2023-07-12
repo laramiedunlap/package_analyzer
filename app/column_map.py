@@ -266,6 +266,7 @@ class FHN_resolver(ColResolver):
     def gp_check(self):
         self.in_df['GP#'] = self.in_df['GP#'].astype(str)
         self.in_df['GP#'] = self.in_df['GP#'].str.replace(' ','')
+        self.in_df['GP#'] = self.in_df['GP#'].astype(int)
 
     @ColResolver.column_method
     def geo_split(self):

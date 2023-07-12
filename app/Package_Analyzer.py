@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 from loantape import LoanTape
+import column_formatting
 import base64
 import datetime
 from typing import Optional
@@ -123,8 +124,8 @@ def cache_loantapes_o_dataframes(_user_loan_tape: LoanTape, in_df:Optional[pd.Da
 def finalize_callback_method(edited_data_dict:dict)-> None:
     
     submitted_loan_tape = pd.concat([edited_data for edited_data in edited_data_dict.values()],axis=0)
-
-    st.session_state['submitted_df'] = submitted_loan_tape
+    submitted_loan_tape = column_formatting.main(submitted_loan_tape)
+    st.session_state['submitted_df'] = submitted_loan_tape 
 
     st.write(submitted_loan_tape)
 
@@ -218,7 +219,7 @@ with tab1:
             lt_build_form_container = st.container()
             lt_build_form = lt_build_form_container.form(clear_on_submit=True, key='finalize_form')
             with lt_build_form:
-                col_config =   { 'GP#':st.column_config.NumberColumn(format="%d"),
+                col_config =   { 
                                 'SIC / NAICS':st.column_config.NumberColumn(format="%d"),
                                 'Loan / Spread': st.column_config.NumberColumn(format="{:.2f}%")
                                     }
@@ -257,13 +258,34 @@ with tab1:
                 finalize_callback_method(edited_data_dict=edited_data_dict)
 
 with tab2:
-    page = st.empty()
-    with page:
-        content = st.container()
-        content.write('Hello!')
-        x = content.button('Goobye?')
-    if x:
-        page.empty()
+        pass
+        # df = st.session_state['submitted_df']
+        # # df['GP#'] = df['GP#'].astype(float).astype(int)
+        
+        # st.write(df.dtypes)
+
+
+
+with tab3:
+    pass
+    # page = st.empty()
+    # with page:
+    #     content = st.container()
+    #     content.write('Hello!')
+    #     x = content.button('Goobye?')
+    # if x:
+    #     page.write('Adios!')
+
+    # with st.expander(label="view code"):
+    #     code= """
+    #     page = st.empty()
+    #     with page:
+    #         content = st.container()
+    #         content.write('Hello!')
+    #         x = content.button('Goobye?')
+    #     if x:
+    #         page.write('Adios!')"""
+    #     st.code(code, language='python')
                 
 
 
